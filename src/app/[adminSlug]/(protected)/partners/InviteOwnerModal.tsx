@@ -14,7 +14,8 @@ export function InviteOwnerModal({
 }) {
   const [email, setEmail] = useState("");
   const [isPending, startTransition] = useTransition();
-  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<{ message: string; tempPassword?: string } | null>(null);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -27,16 +28,20 @@ export function InviteOwnerModal({
   const submit = () => {
     startTransition(async () => {
       const res = await inviteOwnerToPartner(adminSlug, partner.id, email);
-      setResult(
-        res.ok
-          ? {
-              ok: true,
-              message: res.alreadyExisted
-                ? "A meglévő fiók hozzárendelve ehhez az egységhez."
-                : "Meghívó elküldve — a tulajdonos e-mailben kap linket a jelszó beállításához.",
-            }
-          : { ok: false, message: res.error },
-      );
+      if (res.ok) {
+        setError(null);
+        setSuccess({
+          message: res.alreadyExisted
+            ? "A meglévő fiók hozzárendelve ehhez az egységhez."
+            : res.tempPassword
+              ? "Az e-mail küldése most nem sikerült (a rendszer napi/órai e-mail-korlátjába ütköztünk), ezért közvetlenül létrehoztuk a fiókot ideiglenes jelszóval."
+              : "Meghívó elküldve — a partner e-mailben kap linket a jelszó beállításához.",
+          tempPassword: res.tempPassword,
+        });
+      } else {
+        setSuccess(null);
+        setError(res.error);
+      }
     });
   };
 
@@ -48,16 +53,32 @@ export function InviteOwnerModal({
         </div>
         <div className="mb-4 text-base font-bold text-ink">{partner.name}</div>
 
-        {result?.ok ? (
+        {success ? (
           <>
-            <p className="mb-5 text-sm leading-relaxed text-ink">✓ {result.message}</p>
+            <p className="mb-4 text-sm leading-relaxed text-ink">✓ {success.message}</p>
+            {success.tempPassword && (
+              <div className="mb-5 rounded-lg border border-line bg-mist p-3">
+                <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-slate">
+                  Add át ezt a partnernek (biztonságos csatornán):
+                </div>
+                <div className="mb-1 text-xs text-ink">
+                  E-mail: <span className="font-mono font-bold">{email.trim().toLowerCase()}</span>
+                </div>
+                <div className="text-xs text-ink">
+                  Jelszó: <span className="font-mono font-bold">{success.tempPassword}</span>
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-slate">
+                  Javasold neki, hogy bejelentkezés után változtassa meg a jelszavát.
+                </p>
+              </div>
+            )}
             <button onClick={onClose} className="h-10 w-full rounded-lg bg-ink text-sm font-bold text-white">
               Bezárás
             </button>
           </>
         ) : (
           <>
-            <label className="mb-1 block text-xs font-bold text-ink">Tulajdonos e-mail címe</label>
+            <label className="mb-1 block text-xs font-bold text-ink">Partner e-mail címe</label>
             <input
               type="email"
               value={email}
@@ -69,7 +90,7 @@ export function InviteOwnerModal({
               Ha ez egy új e-mail cím, meghívó levelet kap jelszó-beállító linkkel. Ha már van fiókja (mert
               másik egységet is kezel), csak hozzárendeljük ehhez az egységhez is.
             </p>
-            {result && !result.ok && <p className="mb-3 text-sm font-medium text-magenta">{result.message}</p>}
+            {error && <p className="mb-3 text-sm font-medium text-magenta">{error}</p>}
             <div className="flex gap-2">
               <button
                 disabled={!email.includes("@") || isPending}

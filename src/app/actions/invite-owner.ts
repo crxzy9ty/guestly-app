@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export type InviteOwnerResult = { ok: true; alreadyExisted: boolean } | { ok: false; error: string };
+export type InviteOwnerResult =
+  | { ok: true; alreadyExisted: boolean; tempPassword?: string }
+  | { ok: false; error: string };
+
+function generateTempPassword() {
+  return crypto.randomUUID().slice(0, 8) + "-" + crypto.randomUUID().slice(0, 4);
+}
 
 // No manual is_admin() check here: inviteUserByEmail requires the service-role
 // key (createAdminClient), which only server code holds — a non-admin caller
@@ -32,6 +38,7 @@ export async function inviteOwnerToPartner(
 
   let userId = invited?.user?.id;
   let alreadyExisted = false;
+  let tempPassword: string | undefined;
 
   if (inviteError || !userId) {
     // Supabase refuses to re-invite an email that already has an account —
@@ -44,23 +51,42 @@ export async function inviteOwnerToPartner(
       .eq("email", email)
       .maybeSingle();
 
-    if (!existingProfile) {
-      return { ok: false, error: "Nem sikerült elküldeni a meghívót — próbáld újra." };
+    if (existingProfile) {
+      if (existingProfile.role !== "owner") {
+        return { ok: false, error: "Ez az e-mail cím már egy admin fiókhoz tartozik." };
+      }
+      userId = existingProfile.id;
+      alreadyExisted = true;
+    } else {
+      // The invite most likely failed because the invite EMAIL couldn't be
+      // sent (Supabase's default mailer allows only ~2 auth emails/hour —
+      // easy to hit, and will keep happening for real customers until a
+      // verified sending domain is configured). Rather than hard-failing,
+      // create the account directly with a temporary password the admin can
+      // relay to the partner manually.
+      const password = generateTempPassword();
+      const { data: created, error: createError } = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { role: "owner" },
+      });
+
+      if (createError || !created.user) {
+        return { ok: false, error: "Nem sikerült létrehozni a fiókot — próbáld újra." };
+      }
+      userId = created.user.id;
+      tempPassword = password;
     }
-    if (existingProfile.role !== "owner") {
-      return { ok: false, error: "Ez az e-mail cím már egy admin fiókhoz tartozik." };
-    }
-    userId = existingProfile.id;
-    alreadyExisted = true;
   }
 
   const { error: linkError } = await supabase.from("partner_members").insert({ partner_id: partnerId, user_id: userId! });
 
   // 23505 = unique_violation — already linked to this exact partner, treat as success.
   if (linkError && linkError.code !== "23505") {
-    return { ok: false, error: "A meghívás elment, de a partnerhez rendelés nem sikerült." };
+    return { ok: false, error: "A fiók elkészült, de a partnerhez rendelés nem sikerült." };
   }
 
   revalidatePath(`/${adminSlug}/partners`);
-  return { ok: true, alreadyExisted };
+  return { ok: true, alreadyExisted, tempPassword };
 }
