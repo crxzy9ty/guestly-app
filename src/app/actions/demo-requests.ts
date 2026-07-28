@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, escapeHtml } from "@/lib/email";
 
 export type DemoRequestState = { ok: boolean; error: string | null };
 
@@ -21,6 +21,19 @@ export async function submitDemoRequest(
   }
 
   const supabase = await createClient();
+
+  // This form has no auth and no CAPTCHA, so it's a plausible target for
+  // "send arbitrary HTML mail from our verified domain to an address I
+  // don't own" abuse. Capping confirmation emails per target address to
+  // one per hour doesn't stop the request being recorded, just the spam.
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count: recentCount } = await supabase
+    .from("demo_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("email", email)
+    .gte("created_at", oneHourAgo);
+  const recentlySentToThisEmail = (recentCount ?? 0) > 0;
+
   const { error } = await supabase.from("demo_requests").insert({ name, email, business, message });
 
   if (error) {
@@ -28,16 +41,19 @@ export async function submitDemoRequest(
   }
 
   // Best-effort, non-blocking: the request is already saved even if either
-  // email fails to send (e.g. RESEND_API_KEY not configured yet).
-  await sendEmail({
-    to: email,
-    subject: "Megkaptuk a demó-kérésed — Guestly",
-    html: `
-      <p>Szia ${name.split(" ")[0]}!</p>
-      <p>Köszönjük a jelentkezést a(z) <strong>${business}</strong> nevében — hamarosan felvesszük veled a kapcsolatot,
-      hogy egyeztessünk egy 15 perces bemutatót.</p>
-    `,
-  });
+  // email fails to send (e.g. RESEND_API_KEY not configured yet), and even
+  // if we skip sending because of the throttle above.
+  if (!recentlySentToThisEmail) {
+    await sendEmail({
+      to: email,
+      subject: "Megkaptuk a demó-kérésed — Guestly",
+      html: `
+        <p>Szia ${escapeHtml(name.split(" ")[0])}!</p>
+        <p>Köszönjük a jelentkezést a(z) <strong>${escapeHtml(business)}</strong> nevében — hamarosan felvesszük veled a kapcsolatot,
+        hogy egyeztessünk egy 15 perces bemutatót.</p>
+      `,
+    });
+  }
 
   const notifyAddress = process.env.ADMIN_NOTIFICATION_EMAIL;
   if (notifyAddress) {
@@ -45,8 +61,8 @@ export async function submitDemoRequest(
       to: notifyAddress,
       subject: `Új demó-kérés: ${business}`,
       html: `
-        <p><strong>${name}</strong> (${email}) demót kért a(z) <strong>${business}</strong> nevében.</p>
-        ${message ? `<p>Üzenet: ${message}</p>` : ""}
+        <p><strong>${escapeHtml(name)}</strong> (${escapeHtml(email)}) demót kért a(z) <strong>${escapeHtml(business)}</strong> nevében.</p>
+        ${message ? `<p>Üzenet: ${escapeHtml(message)}</p>` : ""}
       `,
     });
   }

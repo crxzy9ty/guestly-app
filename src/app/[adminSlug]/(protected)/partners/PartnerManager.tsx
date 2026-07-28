@@ -204,22 +204,27 @@ export function PartnerManager({
                         Szerkesztés
                       </button>
                       {confirmDeleteId === p.id ? (
-                        <span className="inline-flex gap-1.5">
-                          <button
-                            onClick={async () => {
-                              await deletePartner(adminSlug, p.id);
-                              setConfirmDeleteId(null);
-                            }}
-                            className="rounded-md bg-magenta px-2 py-1 font-bold text-white"
-                          >
-                            Törlés megerősítése
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(null)}
-                            className="rounded-md border border-line px-2 py-1 text-slate"
-                          >
-                            Mégsem
-                          </button>
+                        <span className="inline-flex flex-col items-end gap-1">
+                          <span className="text-[10.5px] font-semibold text-magenta">
+                            Az összes eddigi értékelés is véglegesen törlődik. Ez nem vonható vissza.
+                          </span>
+                          <span className="inline-flex gap-1.5">
+                            <button
+                              onClick={async () => {
+                                await deletePartner(adminSlug, p.id);
+                                setConfirmDeleteId(null);
+                              }}
+                              className="rounded-md bg-magenta px-2 py-1 font-bold text-white"
+                            >
+                              Törlés megerősítése
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="rounded-md border border-line px-2 py-1 text-slate"
+                            >
+                              Mégsem
+                            </button>
+                          </span>
                         </span>
                       ) : (
                         <button onClick={() => setConfirmDeleteId(p.id)} className="font-semibold text-slate">

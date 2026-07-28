@@ -12,11 +12,14 @@ function generateTempPassword() {
   return crypto.randomUUID().slice(0, 8) + "-" + crypto.randomUUID().slice(0, 4);
 }
 
-// No manual is_admin() check here: inviteUserByEmail requires the service-role
-// key (createAdminClient), which only server code holds — a non-admin caller
-// can't reach this action's privileged half at all. The partner_members
-// insert at the end still goes through the regular RLS-respecting client, so
-// even a bug here can't bypass the database's own admin-only write policy.
+// SECURITY: this action is the one place in the app where RLS is NOT the
+// enforcement layer — createAdminClient() holds the service-role key and
+// bypasses RLS entirely, so the check below is the only thing standing
+// between an arbitrary caller and unauthenticated account creation. (An
+// earlier version of this comment claimed holding the service-role key
+// server-side was sufficient protection — it wasn't: whoever can invoke this
+// Server Action gets everything it does, key included. Explicit is_admin()
+// check required.)
 export async function inviteOwnerToPartner(
   adminSlug: string,
   partnerId: string,
@@ -28,6 +31,18 @@ export async function inviteOwnerToPartner(
   }
 
   const supabase = await createClient();
+
+  const {
+    data: { user: caller },
+  } = await supabase.auth.getUser();
+  if (!caller) {
+    return { ok: false, error: "Nincs bejelentkezve." };
+  }
+  const { data: callerProfile } = await supabase.from("profiles").select("role").eq("id", caller.id).single();
+  if (callerProfile?.role !== "admin") {
+    return { ok: false, error: "Ehhez admin jogosultság szükséges." };
+  }
+
   const admin = createAdminClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 

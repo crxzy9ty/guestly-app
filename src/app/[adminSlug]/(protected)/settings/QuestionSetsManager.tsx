@@ -161,19 +161,24 @@ export function QuestionSetsManager({
                         Szerkesztés
                       </button>
                       {confirmRemoveAspect === a.id ? (
-                        <span className="inline-flex gap-1.5">
-                          <button
-                            onClick={() => {
-                              deleteAspect(adminSlug, a.id);
-                              setConfirmRemoveAspect(null);
-                            }}
-                            className="rounded-md bg-magenta px-2 py-1 text-[11px] font-bold text-white"
-                          >
-                            Törlés megerősítése
-                          </button>
-                          <button onClick={() => setConfirmRemoveAspect(null)} className="rounded-md border border-line px-2 py-1 text-[11px] text-slate">
-                            Mégsem
-                          </button>
+                        <span className="inline-flex flex-col items-end gap-1">
+                          <span className="text-[10.5px] text-slate">
+                            A korábbi értékelések megmaradnak, de erre a szempontra nem lesznek láthatók.
+                          </span>
+                          <span className="inline-flex gap-1.5">
+                            <button
+                              onClick={() => {
+                                deleteAspect(adminSlug, a.id);
+                                setConfirmRemoveAspect(null);
+                              }}
+                              className="rounded-md bg-magenta px-2 py-1 text-[11px] font-bold text-white"
+                            >
+                              Törlés megerősítése
+                            </button>
+                            <button onClick={() => setConfirmRemoveAspect(null)} className="rounded-md border border-line px-2 py-1 text-[11px] text-slate">
+                              Mégsem
+                            </button>
+                          </span>
                         </span>
                       ) : (
                         <button onClick={() => setConfirmRemoveAspect(a.id)} className="text-xs font-semibold text-slate">

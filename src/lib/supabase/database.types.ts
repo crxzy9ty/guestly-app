@@ -153,6 +153,24 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["content_settings"]["Row"]>;
         Relationships: [];
       };
+      prize_draws: {
+        Row: {
+          id: string;
+          partner_id: string;
+          draw_date: string;
+          submission_id: string;
+          winner_id: string;
+          drawn_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["prize_draws"]["Row"]> & {
+          partner_id: string;
+          draw_date: string;
+          submission_id: string;
+          winner_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["prize_draws"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: {
       submissions_owner_view: {

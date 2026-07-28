@@ -25,6 +25,14 @@ export function OwnerDashboardClient({
   const [view, setView] = useState<"overview" | "log" | "help">("overview");
   const [selectedAspect, setSelectedAspect] = useState(aspectAverages[0]?.key ?? "");
 
+  // `selectedAspect` is state, so it survives a venue switch (VenueSwitcher
+  // navigates client-side to the same route) even though `aspectAverages`/
+  // `grids` are now for a different venue — which can have a different
+  // question set entirely. Falling back to the first available aspect here
+  // (rather than trusting stale state) is what keeps Heatmap from being
+  // handed an empty grid for a key that no longer exists.
+  const activeAspect = aspectAverages.find((a) => a.key === selectedAspect) ?? aspectAverages[0];
+
   return (
     <div>
       <div className="mb-5 text-sm text-slate">{totalSubmissions} értékelés összesen</div>
@@ -64,7 +72,7 @@ export function OwnerDashboardClient({
                 key={a.key}
                 onClick={() => setSelectedAspect(a.key)}
                 className="rounded-xl border-2 bg-paper p-3.5 text-left"
-                style={{ borderColor: selectedAspect === a.key ? "var(--color-violet)" : "transparent" }}
+                style={{ borderColor: activeAspect?.key === a.key ? "var(--color-violet)" : "transparent" }}
               >
                 <div className="mb-1 text-xs text-slate">
                   {a.icon} {a.label}
@@ -87,10 +95,8 @@ export function OwnerDashboardClient({
           )}
 
           <div className="rounded-2xl border border-line bg-paper p-4">
-            <div className="mb-3 text-sm font-bold text-ink">
-              {aspectAverages.find((a) => a.key === selectedAspect)?.label} — heti bontás
-            </div>
-            <Heatmap grid={grids[selectedAspect] ?? []} />
+            <div className="mb-3 text-sm font-bold text-ink">{activeAspect?.label} — heti bontás</div>
+            <Heatmap grid={(activeAspect && grids[activeAspect.key]) ?? []} />
           </div>
         </>
       )}

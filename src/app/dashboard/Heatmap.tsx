@@ -14,7 +14,7 @@ export function Heatmap({ grid }: { grid: HeatmapGrid }) {
       {DAYS.map((d, di) => (
         <div key={d} className="mb-[3px] grid gap-[3px]" style={{ gridTemplateColumns: `44px repeat(${HOURS.length}, 1fr)` }}>
           <div className="flex items-center text-[11px] text-slate">{d}</div>
-          {grid[di].map((cell, hi) => (
+          {(grid[di] ?? []).map((cell, hi) => (
             <div
               key={hi}
               title={cell ? `${d} ${HOURS[hi]}h: ${cell.avg.toFixed(1)} (${cell.count} értékelés)` : `${d} ${HOURS[hi]}h: nincs adat`}

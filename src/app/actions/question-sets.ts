@@ -31,13 +31,26 @@ function revalidateSettings(adminSlug: string) {
   revalidatePath(`/${adminSlug}/settings`);
 }
 
+// The button that calls this is labelled "+ Új csoport (alapból indul)" —
+// it needs to actually start from the base aspects, not an empty set. An
+// empty set silently breaks the guest flow for any venue it gets assigned
+// to (the review page shows "nincs beállítva kérdéssor" instead of a form).
 export async function createQuestionSet(adminSlug: string, name: string) {
   const trimmed = name.trim();
   if (!trimmed) return;
+
   const supabase = await createClient();
-  const { data } = await supabase.from("question_sets").insert({ name: trimmed }).select("id").single();
+  const [{ data: newSet }, { data: defaultAspects }] = await Promise.all([
+    supabase.from("question_sets").insert({ name: trimmed }).select("id").single(),
+    supabase.from("question_aspects").select("key, label, icon, sort_order").eq("question_set_id", DEFAULT_QUESTION_SET_ID).order("sort_order"),
+  ]);
+
+  if (newSet && defaultAspects && defaultAspects.length > 0) {
+    await supabase.from("question_aspects").insert(defaultAspects.map((a) => ({ ...a, question_set_id: newSet.id })));
+  }
+
   revalidateSettings(adminSlug);
-  return data?.id as string | undefined;
+  return newSet?.id as string | undefined;
 }
 
 export async function duplicateQuestionSet(adminSlug: string, sourceId: string, newName: string) {
@@ -77,13 +90,29 @@ export async function addAspect(adminSlug: string, questionSetId: string, label:
     .select("id", { count: "exact", head: true })
     .eq("question_set_id", questionSetId);
 
-  await supabase.from("question_aspects").insert({
+  const baseKey = slugify(trimmed);
+  const { error } = await supabase.from("question_aspects").insert({
     question_set_id: questionSetId,
-    key: slugify(trimmed),
+    key: baseKey,
     label: trimmed,
     icon: icon.trim() || "✦",
     sort_order: count ?? 0,
   });
+
+  // 23505 = unique_violation on (question_set_id, key) — two labels that
+  // slugify to the same key (e.g. "Kávé minősége" / "Kávé, minősége" both
+  // -> "kaveminosege"). Retry once with a disambiguating suffix instead of
+  // silently dropping the aspect the admin just tried to add.
+  if (error?.code === "23505") {
+    await supabase.from("question_aspects").insert({
+      question_set_id: questionSetId,
+      key: `${baseKey}${Math.random().toString(36).slice(2, 5)}`,
+      label: trimmed,
+      icon: icon.trim() || "✦",
+      sort_order: count ?? 0,
+    });
+  }
+
   revalidateSettings(adminSlug);
 }
 

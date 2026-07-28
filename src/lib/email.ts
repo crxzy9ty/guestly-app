@@ -7,6 +7,19 @@ import { Resend } from "resend";
 // match (e.g. "Guestly <hello@guestly.hu>").
 const FROM = process.env.EMAIL_FROM ?? "Guestly <onboarding@resend.dev>";
 
+// Any string interpolated into an email HTML body must go through this if it
+// originates from user input (guest-typed review reasons, demo-request
+// name/business/message, …) — otherwise a guest can inject markup/links into
+// mail sent from your verified domain.
+export function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function getClient() {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return null;

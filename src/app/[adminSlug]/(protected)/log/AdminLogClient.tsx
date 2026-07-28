@@ -167,7 +167,8 @@ export function AdminLogClient({
             <div className="mt-3 border-t border-line pt-3 text-xs">
               {drawResult.ok && drawResult.winner ? (
                 <span className="text-ink">
-                  ✓ Nyertes: <span className="font-bold text-violet">{drawResult.winner.winnerId}</span>
+                  {drawResult.alreadyDrawn ? "Ma már kisorsoltuk a nyertest: " : "✓ Nyertes: "}
+                  <span className="font-bold text-violet">{drawResult.winner.winnerId}</span>
                   {drawResult.winner.email && <> — <strong>{drawResult.winner.email}</strong></>}
                 </span>
               ) : drawResult.ok ? (
