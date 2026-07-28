@@ -212,7 +212,15 @@ export default async function Home() {
             <div className="h-4 w-4 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
             <span className="text-sm font-bold tracking-tight text-ink">Guestly</span>
           </div>
-          <span className="text-xs text-slate">© 2026 Guestly</span>
+          <div className="flex items-center gap-4 text-xs text-slate">
+            <Link href="/adatvedelem" className="hover:text-ink">
+              Adatkezelési tájékoztató
+            </Link>
+            <Link href="/impresszum" className="hover:text-ink">
+              Impresszum
+            </Link>
+            <span>© 2026 Guestly</span>
+          </div>
         </div>
       </div>
     </div>

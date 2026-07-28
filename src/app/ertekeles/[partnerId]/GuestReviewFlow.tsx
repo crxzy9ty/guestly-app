@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { submitReview } from "@/app/actions/reviews";
 
 type Aspect = { key: string; label: string; icon: string | null };
@@ -219,7 +220,11 @@ export function GuestReviewFlow({
           />
           <span>
             Hozzájárulok, hogy az e-mail címemet a napi nyereményjáték lebonyolításához (a nyertes
-            értesítéséhez) felhasználjátok.
+            értesítéséhez) felhasználjátok. Részletek az{" "}
+            <Link href="/adatvedelem" target="_blank" className="font-semibold text-ink underline">
+              adatkezelési tájékoztatóban
+            </Link>
+            .
           </span>
         </label>
         <button
