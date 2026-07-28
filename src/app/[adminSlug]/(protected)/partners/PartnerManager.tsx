@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { createPartner, updatePartner, deletePartner } from "@/app/actions/partners";
 import { QRModal } from "./QRModal";
+import { InviteOwnerModal } from "./InviteOwnerModal";
 import { downloadCsv } from "@/lib/csv";
 
 export type Partner = {
@@ -83,6 +84,7 @@ export function PartnerManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [qrFor, setQrFor] = useState<Partner | null>(null);
+  const [inviteFor, setInviteFor] = useState<Partner | null>(null);
   const [search, setSearch] = useState("");
 
   const boundCreate = createPartner.bind(null, adminSlug);
@@ -195,6 +197,9 @@ export function PartnerManager({
                       <button onClick={() => setQrFor(p)} className="font-semibold text-ink">
                         QR-kód
                       </button>
+                      <button onClick={() => setInviteFor(p)} className="font-semibold text-violet">
+                        Meghívás
+                      </button>
                       <button onClick={() => setEditingId(p.id)} className="font-semibold text-ink">
                         Szerkesztés
                       </button>
@@ -238,6 +243,7 @@ export function PartnerManager({
       </div>
 
       {qrFor && <QRModal partner={qrFor} siteUrl={siteUrl} onClose={() => setQrFor(null)} />}
+      {inviteFor && <InviteOwnerModal adminSlug={adminSlug} partner={inviteFor} onClose={() => setInviteFor(null)} />}
     </div>
   );
 }
