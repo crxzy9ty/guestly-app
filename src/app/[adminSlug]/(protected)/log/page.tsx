@@ -28,7 +28,19 @@ export default async function AdminLogPage({
     .order("created_at", { ascending: false })
     .limit(300);
   if (selectedPartner) query = query.eq("partner_id", selectedPartner.id);
-  const { data: submissions } = await query;
+
+  // Simplification: the combined ("all venues") log shows the DEFAULT question
+  // set's columns, since most partners share it today. Once question-set
+  // management differs meaningfully per partner, filtering to one venue shows
+  // that venue's real columns correctly either way.
+  const questionSetId = selectedPartner?.question_set_id ?? DEFAULT_QUESTION_SET_ID;
+
+  // Both only depend on `partners` (already resolved above), not on each
+  // other — fetched in parallel to save a round trip.
+  const [{ data: submissions }, { data: aspects }] = await Promise.all([
+    query,
+    supabase.from("question_aspects").select("key, label").eq("question_set_id", questionSetId).order("sort_order"),
+  ]);
   const safeSubmissions = submissions ?? [];
 
   const submissionIds = safeSubmissions.map((s) => s.id);
@@ -39,17 +51,6 @@ export default async function AdminLogPage({
           .select("submission_id, aspect_key, score, reason")
           .in("submission_id", submissionIds)
       : { data: [] as { submission_id: string; aspect_key: string; score: number; reason: string | null }[] };
-
-  // Simplification: the combined ("all venues") log shows the DEFAULT question
-  // set's columns, since most partners share it today. Once question-set
-  // management differs meaningfully per partner, filtering to one venue shows
-  // that venue's real columns correctly either way.
-  const questionSetId = selectedPartner?.question_set_id ?? DEFAULT_QUESTION_SET_ID;
-  const { data: aspects } = await supabase
-    .from("question_aspects")
-    .select("key, label")
-    .eq("question_set_id", questionSetId)
-    .order("sort_order");
 
   const rowsMap = new Map<string, AdminLogRow>();
   for (const s of safeSubmissions) {

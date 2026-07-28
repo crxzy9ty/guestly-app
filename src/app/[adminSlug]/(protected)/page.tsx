@@ -11,15 +11,20 @@ function avg(vals: number[]) {
 export default async function AdminOverviewPage() {
   const supabase = await createClient();
 
-  const [{ data: partners }, { data: submissions }, { data: aspects }] = await Promise.all([
+  // scores doesn't actually filter by submission id (it reads every row
+  // unconditionally below), so it has no real dependency on the other three
+  // — fetched in parallel with them instead of afterwards.
+  const [{ data: partners }, { data: submissions }, { data: aspects }, { data: scores }] = await Promise.all([
     supabase.from("partners").select("id, name, question_set_id, alert_threshold").order("name"),
     supabase.from("submissions").select("id, partner_id, created_at, prize_id"),
     supabase.from("question_aspects").select("key, label, question_set_id"),
+    supabase.from("submission_scores").select("submission_id, aspect_key, score"),
   ]);
 
   const safePartners = (partners ?? []) as Partner[];
   const safeSubmissions = submissions ?? [];
   const safeAspects = (aspects ?? []) as Aspect[];
+  const safeScores = scores ?? [];
 
   if (safePartners.length === 0) {
     return (
@@ -28,13 +33,6 @@ export default async function AdminOverviewPage() {
       </div>
     );
   }
-
-  const submissionIds = new Set(safeSubmissions.map((s) => s.id));
-  const { data: scores } =
-    submissionIds.size > 0
-      ? await supabase.from("submission_scores").select("submission_id, aspect_key, score")
-      : { data: [] as { submission_id: string; aspect_key: string; score: number }[] };
-  const safeScores = scores ?? [];
 
   // Server Component: this genuinely runs fresh per request, so reading the
   // actual current time here is correct, not a memoization hazard — the

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { AdminNav } from "./AdminNav";
 
 // Authoritative role gate for the admin area, independent of the slug check
@@ -15,10 +15,7 @@ export default async function AdminProtectedLayout({
 }) {
   const { adminSlug } = await params;
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
 
   if (!user) {
     redirect(`/${adminSlug}/login`);

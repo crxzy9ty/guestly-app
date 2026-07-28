@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 
 // Authoritative role gate for every /dashboard/* route. proxy.ts only
 // refreshes the session cookie — it does not check roles — so this check has
@@ -7,10 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 // a third, independent layer: even a bug here can't leak cross-partner data.
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
 
   if (!user) {
     redirect("/login");

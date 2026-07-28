@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { signOutOwner } from "@/app/actions/auth";
 import { VenueSwitcher } from "./VenueSwitcher";
 import { OwnerDashboardClient } from "./OwnerDashboardClient";
@@ -14,10 +14,7 @@ export default async function DashboardPage({
 }) {
   const { partner: partnerParam } = await searchParams;
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
 
   const { data: memberships } = await supabase
     .from("partner_members")
@@ -41,21 +38,22 @@ export default async function DashboardPage({
 
   const selected = partners.find((p) => p.id === partnerParam) ?? partners[0];
 
-  const { data: aspects } = await supabase
-    .from("question_aspects")
-    .select("key, label, icon")
-    .eq("question_set_id", selected.question_set_id ?? "")
-    .order("sort_order");
+  // Both only depend on `selected`, not on each other — fetched in parallel.
+  const [{ data: aspects }, { data: submissions }] = await Promise.all([
+    supabase
+      .from("question_aspects")
+      .select("key, label, icon")
+      .eq("question_set_id", selected.question_set_id ?? "")
+      .order("sort_order"),
+    supabase
+      .from("submissions_owner_view")
+      .select("id, created_at")
+      .eq("partner_id", selected.id)
+      .order("created_at", { ascending: false })
+      .limit(1000),
+  ]);
 
   const safeAspects = aspects ?? [];
-
-  const { data: submissions } = await supabase
-    .from("submissions_owner_view")
-    .select("id, created_at")
-    .eq("partner_id", selected.id)
-    .order("created_at", { ascending: false })
-    .limit(1000);
-
   const submissionRows = submissions ?? [];
   const submissionIds = submissionRows.map((s) => s.id);
 

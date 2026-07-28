@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import type { Database } from "./database.types";
 
 // Next.js 16: cookies() is async-only. Call this fresh in every Server
@@ -31,3 +32,16 @@ export async function createClient() {
     },
   );
 }
+
+// Every protected layout AND the page it wraps each independently need the
+// current user — that's two auth round trips per navigation by default.
+// React's cache() dedupes calls with the same reference within a single
+// request, so as long as every call site imports this instead of calling
+// supabase.auth.getUser() directly, it only hits the network once per request.
+export const getCachedUser = cache(async () => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+});
