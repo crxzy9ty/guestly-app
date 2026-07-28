@@ -12,6 +12,7 @@ export function AdminNav({ adminSlug, email }: { adminSlug: string; email: strin
     { href: `${base}/partners`, label: "Partnerek" },
     { href: `${base}/log`, label: "Napló" },
     { href: `${base}/settings`, label: "Beállítások" },
+    { href: `${base}/help`, label: "Súgó" },
   ];
   const boundSignOut = signOutAdmin.bind(null, adminSlug);
 

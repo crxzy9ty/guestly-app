@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Heatmap } from "./Heatmap";
 import { LogTable, type LogRow } from "./LogTable";
+import { HelpPanel } from "@/app/HelpPanel";
+import { ownerHelpFaqs } from "@/lib/help-content";
 import type { AspectAverage, HeatmapGrid } from "@/lib/dashboard/heatmap";
 
 export function OwnerDashboardClient({
@@ -20,7 +22,7 @@ export function OwnerDashboardClient({
   logRows: LogRow[];
   aspects: { key: string; label: string }[];
 }) {
-  const [view, setView] = useState<"overview" | "log">("overview");
+  const [view, setView] = useState<"overview" | "log" | "help">("overview");
   const [selectedAspect, setSelectedAspect] = useState(aspectAverages[0]?.key ?? "");
 
   return (
@@ -32,6 +34,7 @@ export function OwnerDashboardClient({
           [
             ["overview", "Áttekintés"],
             ["log", "Napló"],
+            ["help", "Súgó"],
           ] as const
         ).map(([k, l]) => (
           <button
@@ -44,7 +47,9 @@ export function OwnerDashboardClient({
         ))}
       </div>
 
-      {view === "log" ? (
+      {view === "help" ? (
+        <HelpPanel faqs={ownerHelpFaqs} />
+      ) : view === "log" ? (
         <LogTable rows={logRows} aspects={aspects} />
       ) : totalSubmissions === 0 ? (
         <div className="rounded-xl border border-line bg-paper p-6 text-center text-sm text-slate">
