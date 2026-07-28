@@ -10,6 +10,8 @@ import { createClient } from "@/lib/supabase/server";
 
 function fields(formData: FormData) {
   const str = (key: string) => String(formData.get(key) ?? "").trim() || null;
+  const thresholdRaw = parseFloat(String(formData.get("alert_threshold") ?? ""));
+  const alertThreshold = Number.isFinite(thresholdRaw) ? Math.min(10, Math.max(1, thresholdRaw)) : 6.5;
   return {
     name: String(formData.get("name") ?? "").trim(),
     address: str("address"),
@@ -17,6 +19,7 @@ function fields(formData: FormData) {
     email: str("email"),
     contact_name: str("contact_name"),
     contact_phone: str("contact_phone"),
+    alert_threshold: alertThreshold,
   };
 }
 

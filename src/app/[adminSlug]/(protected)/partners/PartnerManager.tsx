@@ -14,6 +14,7 @@ export type Partner = {
   email: string | null;
   contact_name: string | null;
   contact_phone: string | null;
+  alert_threshold: number;
 };
 
 const inputClass = "h-10 w-full rounded-lg border border-line bg-paper px-3 text-sm text-ink outline-none";
@@ -50,6 +51,21 @@ function PartnerFields({ defaults }: { defaults?: Partial<Partner> }) {
           <input name="contact_phone" defaultValue={defaults?.contact_phone ?? ""} className={inputClass} />
         </div>
       </div>
+      <div>
+        <label className={labelClass}>Riasztási küszöb</label>
+        <input
+          name="alert_threshold"
+          type="number"
+          min={1}
+          max={10}
+          step={0.1}
+          defaultValue={defaults?.alert_threshold ?? 6.5}
+          className={`${inputClass} max-w-[120px]`}
+        />
+        <p className="mt-1 text-[11px] text-slate">
+          Ha egy szempont átlaga ez alá esik, az egység megjelenik a &quot;Figyelendő egységek&quot; listában.
+        </p>
+      </div>
     </div>
   );
 }
@@ -82,8 +98,8 @@ export function PartnerManager({
   const exportCsv = () => {
     downloadCsv(
       `guestly-partnerek-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["nev", "cim", "telefon", "email", "kapcsolattarto", "kapcsolattarto_telefon"],
-      filtered.map((p) => [p.name, p.address, p.phone, p.email, p.contact_name, p.contact_phone]),
+      ["nev", "cim", "telefon", "email", "kapcsolattarto", "kapcsolattarto_telefon", "riasztasi_kuszob"],
+      filtered.map((p) => [p.name, p.address, p.phone, p.email, p.contact_name, p.contact_phone, p.alert_threshold]),
     );
   };
 
@@ -134,6 +150,7 @@ export function PartnerManager({
               <th className="px-3 py-2 font-bold text-slate">Név</th>
               <th className="px-3 py-2 font-bold text-slate">Cím</th>
               <th className="px-3 py-2 font-bold text-slate">Kapcsolattartó</th>
+              <th className="px-3 py-2 text-center font-bold text-slate">Riasztási küszöb</th>
               <th className="px-3 py-2 font-bold text-slate"></th>
             </tr>
           </thead>
@@ -141,7 +158,7 @@ export function PartnerManager({
             {filtered.map((p) =>
               editingId === p.id ? (
                 <tr key={p.id} className="border-t border-line">
-                  <td colSpan={4} className="px-3 py-3">
+                  <td colSpan={5} className="px-3 py-3">
                     <form
                       action={async (formData) => {
                         await updatePartner(adminSlug, p.id, formData);
@@ -169,6 +186,7 @@ export function PartnerManager({
                   <td className="px-3 py-2 font-bold text-ink">{p.name}</td>
                   <td className="max-w-[220px] px-3 py-2 text-slate">{p.address ?? "—"}</td>
                   <td className="px-3 py-2 text-slate">{p.contact_name ?? "—"}</td>
+                  <td className="px-3 py-2 text-center font-bold text-ink">{p.alert_threshold.toFixed(1)}</td>
                   <td className="px-3 py-2 text-right">
                     <span className="inline-flex items-center gap-2.5 whitespace-nowrap">
                       <Link href={`/${adminSlug}/log?partner=${p.id}`} className="font-bold text-violet">
@@ -210,7 +228,7 @@ export function PartnerManager({
             )}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-slate">
+                <td colSpan={5} className="px-3 py-6 text-center text-slate">
                   {partners.length === 0 ? "Nincs még felvett egység." : "Nincs a keresésnek megfelelő egység."}
                 </td>
               </tr>
