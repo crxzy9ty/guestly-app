@@ -18,31 +18,31 @@ export function AdminNav({ adminSlug, email }: { adminSlug: string; email: strin
 
   return (
     <div className="border-b border-line bg-paper">
-      <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="h-[18px] w-[18px] rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-          <span className="text-base font-bold tracking-tight text-ink">Guestly</span>
-          <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+      <div className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-4 py-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="h-[18px] w-[18px] shrink-0 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
+          <span className="shrink-0 text-base font-bold tracking-tight text-ink">Guestly</span>
+          <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
             Admin
           </span>
         </div>
-        <div className="flex items-center gap-3.5">
-          <span className="text-xs text-slate">{email}</span>
+        <div className="flex shrink-0 items-center gap-3.5">
+          <span className="hidden truncate text-xs text-slate sm:inline">{email}</span>
           <form action={boundSignOut}>
-            <button type="submit" className="text-sm font-semibold text-slate hover:text-ink">
+            <button type="submit" className="whitespace-nowrap text-sm font-semibold text-slate hover:text-ink">
               Kijelentkezés
             </button>
           </form>
         </div>
       </div>
-      <div className="mx-auto flex max-w-4xl gap-1 px-6">
+      <div className="mx-auto flex max-w-4xl gap-1 overflow-x-auto px-4 sm:px-6">
         {tabs.map((t) => {
           const active = t.href === base ? pathname === base : pathname.startsWith(t.href);
           return (
             <Link
               key={t.href}
               href={t.href}
-              className={`border-b-2 px-3 py-2.5 text-sm font-bold ${
+              className={`shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-bold ${
                 active ? "border-ink text-ink" : "border-transparent text-slate"
               }`}
             >
