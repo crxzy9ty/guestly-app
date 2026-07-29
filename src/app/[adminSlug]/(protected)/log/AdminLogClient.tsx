@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { drawTodayWinner, type DrawResult } from "@/app/actions/draw";
 import { formatSubmissionId } from "@/lib/format";
 import { downloadCsv } from "@/lib/csv";
+import { formatBudapestTimestamp as fmtTs } from "@/lib/timezone";
 
 export type AdminLogRow = {
   id: string;
@@ -18,12 +19,6 @@ export type AdminLogRow = {
 };
 
 type Aspect = { key: string; label: string };
-
-function fmtTs(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}. ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 const selectClass = "h-9 rounded-lg border border-line bg-paper px-2.5 text-xs text-ink";
 

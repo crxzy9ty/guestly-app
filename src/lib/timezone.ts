@@ -17,3 +17,24 @@ const dateFormatter = new Intl.DateTimeFormat("en-CA", {
 export function budapestDateKey(date: Date | string = new Date()): string {
   return dateFormatter.format(typeof date === "string" ? new Date(date) : date);
 }
+
+const timestampFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+// The Napló tables previously formatted timestamps with Date.getHours() etc,
+// i.e. the VIEWER's browser timezone — which silently disagreed with the
+// heatmap (built from the same created_at values, bucketed in Budapest time)
+// for anyone not on CET/CEST. This is the one formatter both should use.
+export function formatBudapestTimestamp(iso: string): string {
+  const parts = timestampFormatter.formatToParts(new Date(iso));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  const hour = get("hour") === "24" ? "00" : get("hour");
+  return `${get("year")}.${get("month")}.${get("day")}. ${hour}:${get("minute")}`;
+}

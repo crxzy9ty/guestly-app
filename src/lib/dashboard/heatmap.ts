@@ -114,11 +114,17 @@ export function computeAspectAverages(
 // Finds the single weakest (day, hour) bucket for one aspect's grid, used to
 // phrase the alert card with a real, data-backed claim instead of a
 // hardcoded "péntek 18-20h" guess.
+// Requires at least MIN_SAMPLE_SIZE reviews in a bucket before it's eligible
+// to be cited as "the" weak spot — otherwise a single 2/10 review in an
+// otherwise-empty cell reads as a confident, data-backed pattern ("gyengébb
+// Ked 14h körül") when it's really one data point.
+const MIN_SAMPLE_SIZE = 3;
+
 export function weakestBucket(grid: HeatmapGrid): { day: string; hour: number; avg: number } | null {
   let best: { day: string; hour: number; avg: number } | null = null;
   grid.forEach((row, di) => {
     row.forEach((cell, hi) => {
-      if (cell && (!best || cell.avg < best.avg)) {
+      if (cell && cell.count >= MIN_SAMPLE_SIZE && (!best || cell.avg < best.avg)) {
         best = { day: DAYS[di], hour: HOURS[hi], avg: cell.avg };
       }
     });

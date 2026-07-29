@@ -100,7 +100,6 @@ export interface Database {
           email: string | null;
           prize_id: string | null;
           winner_id: string | null;
-          dedup_token: string | null;
           prize_consent_at: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["submissions"]["Row"]> & { partner_id: string };

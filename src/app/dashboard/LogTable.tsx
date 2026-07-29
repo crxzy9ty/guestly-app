@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { formatSubmissionId } from "@/lib/format";
 import { downloadCsv } from "@/lib/csv";
+import { formatBudapestTimestamp as fmtTs } from "@/lib/timezone";
 
 export type LogRow = {
   id: string;
@@ -12,12 +13,6 @@ export type LogRow = {
 };
 
 type Aspect = { key: string; label: string };
-
-function fmtTs(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}. ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 export function LogTable({ rows, aspects }: { rows: LogRow[]; aspects: Aspect[] }) {
   const [dateRange, setDateRange] = useState<"1" | "7" | "30" | "all">("7");

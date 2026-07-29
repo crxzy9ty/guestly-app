@@ -43,7 +43,6 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
 
   const supabase = await createClient();
   const submissionId = crypto.randomUUID();
-  const dedupToken = crypto.randomUUID();
   const hasPrizeEntry = Boolean(input.email && input.prizeConsent);
 
   const { error: submissionError } = await supabase.from("submissions").insert({
@@ -52,7 +51,6 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     email: hasPrizeEntry ? input.email : null,
     prize_id: hasPrizeEntry ? generatePrizeId() : null,
     prize_consent_at: hasPrizeEntry ? new Date().toISOString() : null,
-    dedup_token: dedupToken,
   });
 
   if (submissionError) {
