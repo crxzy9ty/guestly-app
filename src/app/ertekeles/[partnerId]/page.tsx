@@ -50,9 +50,41 @@ export default async function GuestReviewPage({
   }
 
   const cookieStore = await cookies();
-  const alreadySubmitted = Boolean(cookieStore.get(`gst_rev_${partnerId}`));
+  const dedupCookie = cookieStore.get(`gst_rev_${partnerId}`)?.value;
 
-  if (alreadySubmitted) {
+  if (dedupCookie) {
+    // Submitting sets this cookie, and setting a cookie in a Server Action
+    // re-renders the route — so without this window the guest's confirmation
+    // was instantly replaced by the returning-visitor message, right after
+    // they handed over an email address for the draw. Within a few minutes of
+    // submitting, show what they actually just did.
+    const [state, submittedAtRaw] = dedupCookie.split(".");
+    const submittedAt = Number(submittedAtRaw);
+    const justSubmitted = Number.isFinite(submittedAt) && Date.now() - submittedAt < 5 * 60 * 1000;
+
+    if (justSubmitted && state === "prize") {
+      return (
+        <Centered dark>
+          <div className="mb-2 text-4xl">✓</div>
+          <h1 className="mb-2 text-xl font-bold text-white">Sikeres jelentkezés!</h1>
+          <p className="text-sm text-white/70">
+            A mai nap értékelői közül másnap reggel sorsolunk. Ha nyersz, e-mailben kapsz egy egyedi
+            kupon-kódot.
+          </p>
+        </Centered>
+      );
+    }
+
+    if (justSubmitted) {
+      return (
+        <Centered dark>
+          <div className="mb-2 text-4xl">☕</div>
+          <h1 className="mb-2 text-xl font-bold text-white">Köszönjük az időt!</h1>
+          <p className="text-sm text-white/70">Az értékelésed megérkezett.</p>
+        </Centered>
+      );
+    }
+
     return (
       <Centered dark>
         <div className="mb-3 text-4xl">☕</div>

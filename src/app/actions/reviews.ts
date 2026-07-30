@@ -102,9 +102,15 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     return { ok: false, error: "insert-failed" };
   }
 
-  // 12 hours: enough to stop the same device re-rating the same visit, short
-  // enough that a genuine return visit the next day isn't blocked.
-  cookieStore.set(cookieName, "1", {
+  // Value carries WHAT was submitted and WHEN, not just "yes".
+  //
+  // Setting a cookie in a Server Action makes Next.js re-render the route, so
+  // the review page's own server-side "already submitted?" check fires
+  // immediately and replaced the client's success screen with "Már értékeltél
+  // ma" — the guest never saw the confirmation they had just given their email
+  // address for. The page uses these two fields to show the right screen for a
+  // few minutes before falling back to the returning-visitor message.
+  cookieStore.set(cookieName, `${wantsPrize ? "prize" : "plain"}.${Date.now()}`, {
     maxAge: 60 * 60 * 12,
     httpOnly: true,
     sameSite: "lax",
