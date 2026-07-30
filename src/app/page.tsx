@@ -48,7 +48,7 @@ export default async function Home() {
   return (
     <div className="text-ink">
       {/* Nav */}
-      <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
+      <div className="mx-auto flex max-w-4xl items-center justify-between bg-paper px-6 py-5">
         <div className="flex items-center gap-2">
           <div className="h-5 w-5 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
           <span className="text-lg font-bold tracking-tight text-ink">Guestly</span>
@@ -206,7 +206,7 @@ export default async function Home() {
       </Section>
 
       {/* Footer */}
-      <div className="border-t border-line px-6 py-7">
+      <div className="border-t border-line bg-paper px-6 py-7">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="h-4 w-4 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
