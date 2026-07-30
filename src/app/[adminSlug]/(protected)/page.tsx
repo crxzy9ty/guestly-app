@@ -1,10 +1,16 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { VenueRankingTable, type VenueStat } from "./VenueRankingTable";
 
 type Partner = { id: string; name: string; question_set_id: string | null; alert_threshold: number };
 type Aspect = { key: string; label: string; question_set_id: string };
 
-export default async function AdminOverviewPage() {
+export default async function AdminOverviewPage({
+  params,
+}: {
+  params: Promise<{ adminSlug: string }>;
+}) {
+  const { adminSlug } = await params;
   const supabase = await createClient();
 
   // This page used to select EVERY submissions and submission_scores row with
@@ -105,17 +111,26 @@ export default async function AdminOverviewPage() {
         <div className="mb-6">
           <div className="mb-2.5 text-sm font-bold text-ink">Figyelendő egységek</div>
           <div className="grid gap-2">
+            {/* An alert is the most likely reason to want the venue's detail
+                view, so the card itself is the link — otherwise you read the
+                warning here and then hunt for the same row in the table. */}
             {alerts.map((a) => (
-              <div key={a.partner.id} className="rounded-lg bg-ink p-3.5 text-white">
+              <Link
+                key={a.partner.id}
+                href={`/${adminSlug}/venue/${a.partner.id}`}
+                className="block rounded-lg bg-ink p-3.5 text-white"
+              >
                 <span className="font-bold text-cyan">{a.partner.name}</span> — {a.worstAspect!.label} átlaga{" "}
                 {a.worstAspect!.avg.toFixed(1)} (küszöb: {a.partner.alert_threshold})
-              </div>
+                <span className="ml-1.5 text-white/60">→</span>
+              </Link>
             ))}
           </div>
         </div>
       )}
 
       <VenueRankingTable
+        adminSlug={adminSlug}
         stats={venueStats.map(
           (v): VenueStat => ({
             id: v.partner.id,

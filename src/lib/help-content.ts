@@ -30,7 +30,7 @@ export const ownerHelpFaqs: HelpFaq[] = [
 export const adminHelpFaqs: HelpFaq[] = [
   {
     q: "Mi a különbség az Áttekintés és a partnerek saját nézete között?",
-    a: "Az admin Áttekintés az összes partner portfólió-szintű összesítését mutatja: aktív partnerek száma, összesített értékelésszám, egységek rangsora, és automatikus riasztás azoknál, ahol valamelyik szempont a saját küszöbük alá esik.",
+    a: "Az admin Áttekintés az összes partner portfólió-szintű összesítését mutatja: aktív partnerek száma, összesített értékelésszám, egységek rangsora, és automatikus riasztás azoknál, ahol valamelyik szempont a saját küszöbük alá esik. Ha egy konkrét egységet szeretnél úgy látni, ahogy a partner látja (szempont-kártyák, hőtérkép, riasztás), kattints a rangsorban a \"Részletek\" linkre, vagy magára a riasztás-kártyára.",
   },
   {
     q: "Hogyan adok hozzá új partnert?",

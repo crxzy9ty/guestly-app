@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { downloadCsv } from "@/lib/csv";
 
 export type VenueStat = {
@@ -13,7 +14,7 @@ export type VenueStat = {
   worstAspectAvg: number | null;
 };
 
-export function VenueRankingTable({ stats }: { stats: VenueStat[] }) {
+export function VenueRankingTable({ stats, adminSlug }: { stats: VenueStat[]; adminSlug: string }) {
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -59,6 +60,7 @@ export function VenueRankingTable({ stats }: { stats: VenueStat[] }) {
               <th className="px-3 py-2 text-center font-bold text-slate">Értékelések</th>
               <th className="px-3 py-2 text-center font-bold text-slate">Sorsolásra jelentkezett</th>
               <th className="px-3 py-2 font-bold text-slate">Leggyengébb szempont</th>
+              <th className="px-3 py-2 font-bold text-slate"></th>
             </tr>
           </thead>
           <tbody>
@@ -71,11 +73,19 @@ export function VenueRankingTable({ stats }: { stats: VenueStat[] }) {
                 <td className="px-3 py-2 text-slate">
                   {s.worstAspectLabel ? `${s.worstAspectLabel} (${s.worstAspectAvg?.toFixed(1)})` : "—"}
                 </td>
+                {/* An explicit link rather than a click handler on the row: it
+                    is keyboard-reachable, middle-clickable, and visibly a
+                    link, none of which a clickable <tr> gives for free. */}
+                <td className="whitespace-nowrap px-3 py-2 text-right">
+                  <Link href={`/${adminSlug}/venue/${s.id}`} className="font-bold text-violet">
+                    Részletek →
+                  </Link>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-slate">
+                <td colSpan={6} className="px-3 py-6 text-center text-slate">
                   Nincs a keresésnek megfelelő egység.
                 </td>
               </tr>

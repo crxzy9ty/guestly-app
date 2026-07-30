@@ -191,6 +191,9 @@ export function PartnerManager({
                   <td className="px-3 py-2 text-center font-bold text-ink">{p.alert_threshold.toFixed(1)}</td>
                   <td className="px-3 py-2 text-right">
                     <span className="inline-flex items-center gap-2.5 whitespace-nowrap">
+                      <Link href={`/${adminSlug}/venue/${p.id}`} className="font-bold text-violet">
+                        Nézet
+                      </Link>
                       <Link href={`/${adminSlug}/log?partner=${p.id}`} className="font-bold text-violet">
                         Napló →
                       </Link>

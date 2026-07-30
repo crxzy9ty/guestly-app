@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Heatmap } from "./Heatmap";
 import { LogTable, type LogRow } from "./LogTable";
 import { HelpPanel } from "@/app/HelpPanel";
+import { VenueInsights } from "@/app/VenueInsights";
 import { ownerHelpFaqs } from "@/lib/help-content";
 import type { AspectAverage, HeatmapGrid } from "@/lib/dashboard/heatmap";
 
@@ -23,15 +23,6 @@ export function OwnerDashboardClient({
   aspects: { key: string; label: string }[];
 }) {
   const [view, setView] = useState<"overview" | "log" | "help">("overview");
-  const [selectedAspect, setSelectedAspect] = useState(aspectAverages[0]?.key ?? "");
-
-  // `selectedAspect` is state, so it survives a venue switch (VenueSwitcher
-  // navigates client-side to the same route) even though `aspectAverages`/
-  // `grids` are now for a different venue — which can have a different
-  // question set entirely. Falling back to the first available aspect here
-  // (rather than trusting stale state) is what keeps Heatmap from being
-  // handed an empty grid for a key that no longer exists.
-  const activeAspect = aspectAverages.find((a) => a.key === selectedAspect) ?? aspectAverages[0];
 
   return (
     <div>
@@ -59,46 +50,15 @@ export function OwnerDashboardClient({
         <HelpPanel faqs={ownerHelpFaqs} />
       ) : view === "log" ? (
         <LogTable rows={logRows} aspects={aspects} />
-      ) : totalSubmissions === 0 ? (
-        <div className="rounded-xl border border-line bg-paper p-6 text-center text-sm text-slate">
-          Ehhez az egységhez még nem érkezett értékelés — amint az első vendég beküldi, itt fog
-          megjelenni.
-        </div>
       ) : (
-        <>
-          <div className="mb-5 grid grid-cols-2 gap-2.5">
-            {aspectAverages.map((a) => (
-              <button
-                key={a.key}
-                onClick={() => setSelectedAspect(a.key)}
-                className="rounded-xl border-2 bg-paper p-3.5 text-left"
-                style={{ borderColor: activeAspect?.key === a.key ? "var(--color-violet)" : "transparent" }}
-              >
-                <div className="mb-1 text-xs text-slate">
-                  {a.icon} {a.label}
-                </div>
-                <div
-                  className="text-xl font-bold tracking-tight"
-                  style={{ color: a.avg !== null && a.avg < 6.5 ? "var(--color-magenta)" : "var(--color-ink)" }}
-                >
-                  {a.avg !== null ? a.avg.toFixed(1) : "—"}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {alertMessage && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-ink p-4 text-white">
-              <span className="text-lg">⚠</span>
-              <div className="text-sm leading-relaxed">{alertMessage}</div>
-            </div>
-          )}
-
-          <div className="rounded-2xl border border-line bg-paper p-4">
-            <div className="mb-3 text-sm font-bold text-ink">{activeAspect?.label} — heti bontás</div>
-            <Heatmap grid={(activeAspect && grids[activeAspect.key]) ?? []} />
-          </div>
-        </>
+        // Aspect tiles + alert + heatmap live in VenueInsights so the admin
+        // venue detail page renders the exact same panel from the same code.
+        <VenueInsights
+          aspectAverages={aspectAverages}
+          grids={grids}
+          alertMessage={alertMessage}
+          totalSubmissions={totalSubmissions}
+        />
       )}
     </div>
   );
