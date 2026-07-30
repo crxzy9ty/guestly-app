@@ -138,6 +138,10 @@ export function PartnerManager({
 
   const boundCreate = createPartner.bind(null, adminSlug);
 
+  // Looked up from `partners`, not `filtered`: narrowing the search while a row
+  // is open would otherwise make the edit panel vanish mid-edit.
+  const editingPartner = partners.find((p) => p.id === editingId) ?? null;
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const matched = q
@@ -239,6 +243,49 @@ export function PartnerManager({
         <div className="text-xs text-slate">{filtered.length} találat</div>
       </div>
 
+      {/* The edit form used to live inside the table, in a <td colSpan>. That
+          left the column headers rendered above a form that has nothing to do
+          with those columns, so they collapsed into one another
+          ("NévElőfizetésCímKapcsolattartó…") above an obviously non-tabular
+          grid. It belongs outside the table, in the same panel style as the add
+          form above. */}
+      {editingPartner && (
+        <div className="mb-4 rounded-xl border-2 border-violet bg-paper p-4">
+          <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.15em] text-violet">
+            Egység szerkesztése
+          </div>
+          <div className="mb-3.5 text-base font-bold text-ink">{editingPartner.name}</div>
+          <form
+            action={async (formData) => {
+              const res = await updatePartner(adminSlug, editingPartner.id, formData);
+              setFormError(res.error);
+              if (!res.error) setEditingId(null);
+            }}
+          >
+            {/* Keyed on the partner id so switching which row you're editing
+                resets the uncontrolled defaultValue inputs to the new venue's
+                data instead of keeping the previous one's. */}
+            <PartnerFields key={editingPartner.id} defaults={editingPartner} />
+            {formError && <p className="mt-2.5 text-sm font-medium text-magenta">{formError}</p>}
+            <div className="mt-3 flex gap-2">
+              <button type="submit" className="h-10 rounded-lg bg-ink px-5 text-sm font-bold text-white">
+                Mentés
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormError(null);
+                  setEditingId(null);
+                }}
+                className="h-10 rounded-lg border border-line px-4 text-sm font-bold text-ink"
+              >
+                Mégsem
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="max-h-[65vh] overflow-auto rounded-xl border border-line bg-paper">
         <table className="w-full min-w-[720px] border-collapse text-xs">
           <thead>
@@ -252,36 +299,14 @@ export function PartnerManager({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) =>
-              editingId === p.id ? (
-                <tr key={p.id} className="border-t border-line">
-                  <td colSpan={6} className="px-3 py-3">
-                    <form
-                      action={async (formData) => {
-                        const res = await updatePartner(adminSlug, p.id, formData);
-                        setFormError(res.error);
-                        if (!res.error) setEditingId(null);
-                      }}
-                    >
-                      <PartnerFields defaults={p} />
-                      {formError && <p className="mt-2.5 text-sm font-medium text-magenta">{formError}</p>}
-                      <div className="mt-3 flex gap-2">
-                        <button type="submit" className="h-9 rounded-lg bg-ink px-4 text-xs font-bold text-white">
-                          Mentés
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingId(null)}
-                          className="h-9 rounded-lg border border-line px-4 text-xs font-bold text-ink"
-                        >
-                          Mégsem
-                        </button>
-                      </div>
-                    </form>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={p.id} className="border-t border-line">
+            {filtered.map((p) => (
+              <tr
+                key={p.id}
+                className="border-t border-line"
+                // Marks which row the edit panel above belongs to — without it,
+                // the form appears detached from any particular venue.
+                style={editingId === p.id ? { background: "var(--color-mist)" } : undefined}
+              >
                   <td className="px-3 py-2 font-bold text-ink">{p.name}</td>
                   <td className="px-3 py-2">
                     <SubscriptionPill partner={p} />
@@ -303,8 +328,14 @@ export function PartnerManager({
                       <button onClick={() => setInviteFor(p)} className="font-semibold text-violet">
                         Meghívás
                       </button>
-                      <button onClick={() => setEditingId(p.id)} className="font-semibold text-ink">
-                        Szerkesztés
+                      <button
+                        onClick={() => {
+                          setFormError(null);
+                          setEditingId(editingId === p.id ? null : p.id);
+                        }}
+                        className="font-semibold text-ink"
+                      >
+                        {editingId === p.id ? "Szerkesztés bezárása" : "Szerkesztés"}
                       </button>
                       {confirmDeleteId === p.id ? (
                         <span className="inline-flex flex-col items-end gap-1">
@@ -338,8 +369,7 @@ export function PartnerManager({
                     </span>
                   </td>
                 </tr>
-              ),
-            )}
+            ))}
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-slate">
