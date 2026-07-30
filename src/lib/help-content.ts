@@ -41,6 +41,10 @@ export const adminHelpFaqs: HelpFaq[] = [
     a: "A Partnerek fülön az adott sor \"Meghívás\" gombjával adhatod meg az e-mail címét — ha új cím, meghívó levelet kap jelszó-beállító linkkel; ha már van fiókja (mert másik egységet is kezel), csak hozzárendeljük ehhez az egységhez is.",
   },
   {
+    q: "Be tudok állítani jelszót e-mail küldése nélkül?",
+    a: "Igen. A \"Meghívás\" modálban jelöld be a \"Jelszó generálása e-mail helyett\" opciót — a fiók azonnal elkészül, és a felületen megjelenik egy ideiglenes jelszó, amit átadhatsz a partnernek. Akkor hasznos, ha épp együtt vagytok, vagy ha a levélküldés órai korlátjába ütköztél. Javasold neki, hogy első bejelentkezés után változtassa meg.",
+  },
+  {
     q: "Hogyan tudok QR-kódot generálni egy partnerhez?",
     a: "A Partnerek táblázatban minden sornál található egy \"QR-kód\" gomb — ez megnyit egy előnézetet, amit letölthetsz és kinyomtathatsz kihelyezésre.",
   },

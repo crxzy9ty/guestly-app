@@ -13,6 +13,7 @@ export function InviteOwnerModal({
   onClose: () => void;
 }) {
   const [email, setEmail] = useState("");
+  const [skipEmail, setSkipEmail] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ message: string; tempPassword?: string } | null>(null);
@@ -27,15 +28,21 @@ export function InviteOwnerModal({
 
   const submit = () => {
     startTransition(async () => {
-      const res = await inviteOwnerToPartner(adminSlug, partner.id, email);
+      const res = await inviteOwnerToPartner(adminSlug, partner.id, email, skipEmail);
       if (res.ok) {
         setError(null);
         setSuccess({
+          // Three distinct outcomes worth telling apart: an existing account
+          // just got linked, a password was generated because we were ASKED to
+          // skip email, or a password was generated because sending FAILED.
+          // The last one is the only case the admin might want to retry later.
           message: res.alreadyExisted
             ? "A meglévő fiók hozzárendelve ehhez az egységhez."
-            : res.tempPassword
-              ? "Az e-mail küldése most nem sikerült (a rendszer napi/órai e-mail-korlátjába ütköztünk), ezért közvetlenül létrehoztuk a fiókot ideiglenes jelszóval."
-              : "Meghívó elküldve — a partner e-mailben kap linket a jelszó beállításához.",
+            : res.tempPassword && res.emailSkipped
+              ? "Fiók létrehozva, e-mail nélkül. Add át az alábbi belépési adatokat a partnernek."
+              : res.tempPassword
+                ? "Az e-mail küldése most nem sikerült (a rendszer napi/órai e-mail-korlátjába ütköztünk), ezért közvetlenül létrehoztuk a fiókot ideiglenes jelszóval."
+                : "Meghívó elküldve — a partner e-mailben kap linket a jelszó beállításához.",
           tempPassword: res.tempPassword,
         });
       } else {
@@ -86,10 +93,25 @@ export function InviteOwnerModal({
               placeholder="tulajdonos@email.hu"
               className="mb-2 h-10 w-full rounded-lg border border-line px-3 text-sm text-ink outline-none"
             />
-            <p className="mb-4 text-[11px] leading-relaxed text-slate">
+            <p className="mb-3 text-[11px] leading-relaxed text-slate">
               Ha ez egy új e-mail cím, meghívó levelet kap jelszó-beállító linkkel. Ha már van fiókja (mert
               másik egységet is kezel), csak hozzárendeljük ehhez az egységhez is.
             </p>
+
+            <label className="mb-3 flex items-start gap-2 rounded-lg border border-line bg-mist p-2.5 text-left text-[11px] leading-relaxed text-ink">
+              <input
+                type="checkbox"
+                checked={skipEmail}
+                onChange={(e) => setSkipEmail(e.target.checked)}
+                className="mt-0.5 shrink-0"
+              />
+              <span>
+                <strong>Jelszó generálása e-mail helyett.</strong> Nem küldünk levelet — a fiók azonnal
+                elkészül, és itt megjelenik egy ideiglenes jelszó, amit átadhatsz. Hasznos, ha a partner
+                épp veled van, vagy ha a levélküldés órai korlátja aktív.
+              </span>
+            </label>
+
             {error && <p className="mb-3 text-sm font-medium text-magenta">{error}</p>}
             <div className="flex gap-2">
               <button
@@ -97,7 +119,7 @@ export function InviteOwnerModal({
                 onClick={submit}
                 className="h-10 flex-1 rounded-lg bg-ink text-sm font-bold text-white disabled:opacity-40"
               >
-                {isPending ? "Küldés…" : "Meghívás"}
+                {isPending ? (skipEmail ? "Létrehozás…" : "Küldés…") : skipEmail ? "Fiók létrehozása" : "Meghívás"}
               </button>
               <button onClick={onClose} className="h-10 rounded-lg border border-line px-4 text-sm font-bold text-ink">
                 Mégsem

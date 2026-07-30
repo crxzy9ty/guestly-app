@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type InviteOwnerResult =
-  | { ok: true; alreadyExisted: boolean; tempPassword?: string }
+  | { ok: true; alreadyExisted: boolean; tempPassword?: string; emailSkipped?: boolean }
   | { ok: false; error: string };
 
 function generateTempPassword() {
@@ -20,10 +20,16 @@ function generateTempPassword() {
 // server-side was sufficient protection — it wasn't: whoever can invoke this
 // Server Action gets everything it does, key included. Explicit is_admin()
 // check required.)
+// `skipEmail` creates the account directly with a generated password and sends
+// nothing, for onboarding a partner who is sitting in front of you (or when
+// the mail path is known to be rate-limited). The same createUser() fallback
+// already existed, but only reachable by the invite email FAILING — which made
+// the deliberate case impossible to ask for.
 export async function inviteOwnerToPartner(
   adminSlug: string,
   partnerId: string,
   emailRaw: string,
+  skipEmail = false,
 ): Promise<InviteOwnerResult> {
   const email = emailRaw.trim().toLowerCase();
   if (!email.includes("@")) {
@@ -46,10 +52,16 @@ export async function inviteOwnerToPartner(
   const admin = createAdminClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { role: "owner" },
-    redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
-  });
+  // When skipping email, don't call inviteUserByEmail at all — calling it and
+  // ignoring the result would still send the message. Falling through with a
+  // null userId reuses the existing "already has an account?" / createUser
+  // branch below, so both paths stay one code path.
+  const { data: invited, error: inviteError } = skipEmail
+    ? { data: null, error: null }
+    : await admin.auth.admin.inviteUserByEmail(email, {
+        data: { role: "owner" },
+        redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
+      });
 
   let userId = invited?.user?.id;
   let alreadyExisted = false;
@@ -73,12 +85,12 @@ export async function inviteOwnerToPartner(
       userId = existingProfile.id;
       alreadyExisted = true;
     } else {
-      // The invite most likely failed because the invite EMAIL couldn't be
-      // sent (Supabase's default mailer allows only ~2 auth emails/hour —
-      // easy to hit, and will keep happening for real customers until a
-      // verified sending domain is configured). Rather than hard-failing,
-      // create the account directly with a temporary password the admin can
-      // relay to the partner manually.
+      // Either the caller asked to skip email outright, or the invite failed —
+      // most likely because the invite EMAIL couldn't be sent (Supabase's
+      // default mailer allows only ~2 auth emails/hour, easy to hit, and it
+      // will keep happening for real customers until a verified sending domain
+      // is configured). Both want the same outcome: create the account
+      // directly with a temporary password the admin relays manually.
       const password = generateTempPassword();
       const { data: created, error: createError } = await admin.auth.admin.createUser({
         email,
@@ -103,5 +115,5 @@ export async function inviteOwnerToPartner(
   }
 
   revalidatePath(`/${adminSlug}/partners`);
-  return { ok: true, alreadyExisted, tempPassword };
+  return { ok: true, alreadyExisted, tempPassword, emailSkipped: skipEmail };
 }
