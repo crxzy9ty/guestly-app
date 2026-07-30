@@ -58,7 +58,7 @@ export const adminHelpFaqs: HelpFaq[] = [
   },
   {
     q: "Hogyan sorsolok napi nyertest?",
-    a: "A Napló fülön válaszd ki a kívánt egységet a szűrőben — ekkor megjelenik a \"Mai nyertes sorsolása\" gomb, ami csak az adott egység aznapi, sorsolásra jelentkezett vendégei közül választ, és e-mailben is értesíti a nyertest.",
+    a: "Alapesetben sehogy: a sorsolás minden éjjel automatikusan lefut minden partnernél az előző napra, és a nyertes e-mailben megkapja a kupon-kódot. Az előző napra sorsolunk, nem az aktuálisra, hogy az este későn értékelők se maradjanak ki. Ha valamiért kézzel akarod lezárni a mai napot, a Napló fülön válaszd ki az egységet a szűrőben, és használd a \"Mai nyertes sorsolása\" gombot — egy napra egy egység csak egyszer sorsolható, tehát ez nem tud dupla kupont kiadni.",
   },
   {
     q: "Hogyan szerkesztem a nyilvános landing oldal szövegét?",

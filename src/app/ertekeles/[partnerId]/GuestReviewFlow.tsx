@@ -201,8 +201,9 @@ export function GuestReviewFlow({
         <div className="mb-3 text-3xl">🎁</div>
         <h1 className="mb-2 text-lg font-bold text-ink">Add meg az e-mail címed</h1>
         <p className="mb-4 text-xs leading-relaxed text-slate">
-          Minden nap egy vendég nyer egy ingyen kávét az aznap értékelők között — csak a sorsoláshoz
-          használjuk az e-mail címed, máshova nem kerül, nem küldünk hírlevelet.
+          Minden nap egy vendég nyer egy ingyen kávét az aznap értékelők között, a sorsolás másnap
+          reggel történik — csak ehhez használjuk az e-mail címed, máshova nem kerül, nem küldünk
+          hírlevelet.
         </p>
         <input
           type="email"
@@ -250,9 +251,12 @@ export function GuestReviewFlow({
       <Centered dark>
         <div className="mb-2 text-4xl">✓</div>
         <h1 className="mb-2 text-xl font-bold text-white">Sikeres jelentkezés!</h1>
+        {/* "Másnap reggel", not "a mai nap végén": the draw runs in the small
+            hours for the completed previous day, so that nobody who rates late
+            in the evening is left out of it. */}
         <p className="mb-6 text-sm text-white/70">
-          A mai nap végén kisorsolunk egy nyertest az aznap értékelők között. Ha nyersz, e-mailben
-          kapsz egy egyedi kupon-kódot.
+          A mai nap összes értékelője között másnap reggel sorsolunk. Ha nyersz, e-mailben kapsz egy
+          egyedi kupon-kódot.
         </p>
       </Centered>
     );
