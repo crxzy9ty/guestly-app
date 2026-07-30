@@ -81,7 +81,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   }
 
   const supabase = createAdminClient();
-  const { error } = await supabase.rpc("submit_guest_review", {
+  const { data, error } = await supabase.rpc("submit_guest_review", {
     p_partner_id: input.partnerId,
     p_request_nonce: verified.nonce,
     p_email: wantsPrize ? email : null,
@@ -102,6 +102,13 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     return { ok: false, error: "insert-failed" };
   }
 
+  // The review is always stored; only the prize entry is dropped once this
+  // address has already entered this venue's draw twice today. Reporting the
+  // database's answer rather than what we asked for is what keeps the
+  // confirmation screen honest — telling someone they are in a draw they are
+  // not in would be worse than telling them nothing.
+  const enteredPrizeDraw = Boolean(data?.[0]?.prize_entered);
+
   // Value carries WHAT was submitted and WHEN, not just "yes".
   //
   // Setting a cookie in a Server Action makes Next.js re-render the route, so
@@ -110,12 +117,12 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   // ma" — the guest never saw the confirmation they had just given their email
   // address for. The page uses these two fields to show the right screen for a
   // few minutes before falling back to the returning-visitor message.
-  cookieStore.set(cookieName, `${wantsPrize ? "prize" : "plain"}.${Date.now()}`, {
+  cookieStore.set(cookieName, `${enteredPrizeDraw ? "prize" : "plain"}.${Date.now()}`, {
     maxAge: 60 * 60 * 12,
     httpOnly: true,
     sameSite: "lax",
     path: "/",
   });
 
-  return { ok: true, enteredPrizeDraw: wantsPrize };
+  return { ok: true, enteredPrizeDraw };
 }

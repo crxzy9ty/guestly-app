@@ -287,7 +287,10 @@ export interface Database {
           p_prize_consent_at: string | null;
           p_scores: { aspect_key: string; score: number; reason: string | null }[];
         };
-        Returns: string;
+        // prize_entered is the DATABASE's answer, not the request: an address
+        // that already entered this venue's draw twice today gets the review
+        // stored but the entry dropped.
+        Returns: { submission_id: string; prize_entered: boolean }[];
       };
     };
     Enums: {

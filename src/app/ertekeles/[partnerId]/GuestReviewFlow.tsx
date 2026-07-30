@@ -25,7 +25,15 @@ export function GuestReviewFlow({
   token: string;
 }) {
   const [screen, setScreen] = useState<
-    "welcome" | "form" | "askReason" | "thanks" | "prizeEmail" | "prizeConfirmed" | "done" | "error"
+    | "welcome"
+    | "form"
+    | "askReason"
+    | "thanks"
+    | "prizeEmail"
+    | "prizeConfirmed"
+    | "prizeCapped"
+    | "done"
+    | "error"
   >("welcome");
   const [step, setStep] = useState(0);
   const [ratings, setRatings] = useState<Record<string, number>>({});
@@ -78,7 +86,19 @@ export function GuestReviewFlow({
         email: withPrize ? email : undefined,
         prizeConsent: withPrize ? consent : undefined,
       });
-      setScreen(result.ok ? (withPrize ? "prizeConfirmed" : "done") : "error");
+      if (!result.ok) {
+        setScreen("error");
+        return;
+      }
+      // Asking to enter the draw and actually being entered are different
+      // things: an address that has already entered this venue's draw twice
+      // today is capped. The review is still saved, so say that rather than
+      // congratulating them on an entry they did not get.
+      if (withPrize && !result.enteredPrizeDraw) {
+        setScreen("prizeCapped");
+        return;
+      }
+      setScreen(withPrize ? "prizeConfirmed" : "done");
     });
   };
 
@@ -247,6 +267,20 @@ export function GuestReviewFlow({
         >
           ← Mégsem
         </button>
+      </Centered>
+    );
+  }
+
+  if (screen === "prizeCapped") {
+    return (
+      <Centered dark>
+        <div className="mb-2 text-4xl">✓</div>
+        <h1 className="mb-2 text-xl font-bold text-white">Köszönjük az értékelést!</h1>
+        <p className="text-sm leading-relaxed text-white/70">
+          Ezzel az e-mail címmel ma már kétszer jelentkeztél itt a sorsolásra, ezért ez a beküldés a
+          mai sorsolásba nem számít bele — az értékelésed viszont megérkezett, és holnap újra
+          játszhatsz.
+        </p>
       </Centered>
     );
   }
