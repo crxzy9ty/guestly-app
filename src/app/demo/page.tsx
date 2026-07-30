@@ -76,6 +76,22 @@ export default function DemoRequestPage() {
             />
           </div>
 
+          {/* The guest prize-entry form has asked for explicit consent and
+              linked the privacy notice since it was built; this form collects
+              name, email and business name with neither, which is the same
+              category of personal data on the same legal footing. */}
+          <label className="flex items-start gap-2 text-left text-[11.5px] leading-relaxed text-slate">
+            <input type="checkbox" name="consent" required className="mt-0.5 shrink-0" />
+            <span>
+              Hozzájárulok, hogy a megadott adataimat a Guestly a demó egyeztetése és a kapcsolatfelvétel
+              céljából kezelje. Részletek az{" "}
+              <Link href="/adatvedelem" target="_blank" className="font-semibold text-ink underline">
+                adatkezelési tájékoztatóban
+              </Link>
+              .
+            </span>
+          </label>
+
           {state.error && <p className="text-sm font-medium text-magenta">{state.error}</p>}
 
           <SubmitButton />

@@ -20,6 +20,14 @@ export async function submitDemoRequest(
     return { ok: false, error: "Kérjük, töltsd ki a kötelező mezőket." };
   }
 
+  // The checkbox is marked `required` in the markup, but that is a client-side
+  // affordance only — a direct POST skips it entirely, and consent that can be
+  // bypassed is not consent. Checked here so the record is never written
+  // without it.
+  if (!formData.get("consent")) {
+    return { ok: false, error: "Az adatkezelési hozzájárulás megadása kötelező." };
+  }
+
   const supabase = await createClient();
 
   // This form has no auth and no CAPTCHA, so it's a plausible target for

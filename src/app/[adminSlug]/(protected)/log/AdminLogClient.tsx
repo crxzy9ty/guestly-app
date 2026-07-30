@@ -142,8 +142,13 @@ export function AdminLogClient({
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div>
               <div className="text-sm font-bold text-ink">Napi sorsolás — {selectedPartnerName}</div>
+              {/* Says "calendar day", not "last 24 hours": drawTodayWinner
+                  filters on the Budapest calendar date, so a 23:50 and a 00:10
+                  entrant are in different draws — which a rolling 24h window
+                  would not do, and the old wording promised. */}
               <div className="text-[11.5px] text-slate">
-                Csak az ehhez az egységhez, az elmúlt 24 órában beérkezett jelentkezők közül sorsol.
+                Csak az ehhez az egységhez, a mai napon (budapesti idő szerint) beérkezett jelentkezők
+                közül sorsol. Naponta egyszer sorsolható — újrakattintásra a már kisorsolt nyertest mutatja.
               </div>
             </div>
             <button

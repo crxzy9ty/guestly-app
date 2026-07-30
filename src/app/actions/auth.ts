@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthActionState = {
@@ -10,15 +9,28 @@ export type AuthActionState = {
   success?: boolean;
 };
 
-async function getOrigin() {
-  const h = await headers();
-  return h.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// The base URL password-reset links point at. Read from configuration ONLY —
+// never from the request.
+//
+// This used to prefer the `Origin` header, which the client fully controls: a
+// crafted request with `Origin: https://attacker.example` would have produced a
+// reset link pointing there, handing the recovery token to whoever sent it, for
+// any address they cared to name. Supabase's own redirect allow-list is a
+// second line of defence, but it is configured elsewhere and easy to widen by
+// accident, so this must not depend on it.
+function getSiteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 }
 
-// Owner login (email + password). Role is not checked here: the /dashboard
-// layout independently verifies profiles.role === 'owner' before rendering
-// anything, and RLS independently restricts which data an owner can reach —
-// this action only needs to authenticate.
+// Owner login (email + password). The /dashboard layout independently verifies
+// profiles.role === 'owner', and RLS independently restricts what an owner can
+// reach, so neither depends on the role check here.
+//
+// The role IS checked here anyway, purely for the error message: an admin
+// signing in on this form used to authenticate successfully, get redirected to
+// /dashboard, be bounced straight back by that layout's role gate, and land on
+// this page again with no explanation — indistinguishable from a wrong
+// password, with correct credentials.
 export async function signInOwner(
   _prevState: AuthActionState,
   formData: FormData,
@@ -27,10 +39,23 @@ export async function signInOwner(
   const password = String(formData.get("password") ?? "");
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) {
+  if (error || !data.user) {
     return { error: "Hibás e-mail cím vagy jelszó." };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .single();
+
+  if (profile?.role === "admin") {
+    // Deliberately vague about WHERE the admin area is — this form is public,
+    // and the admin route's only obscurity is that its URL isn't published.
+    await supabase.auth.signOut();
+    return { error: "Ez egy admin fiók — az admin felület saját bejelentkezési címen érhető el." };
   }
 
   revalidatePath("/", "layout");
@@ -97,10 +122,9 @@ export async function requestPasswordReset(
     return { error: "Add meg az e-mail címed." };
   }
 
-  const origin = await getOrigin();
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=/set-password`,
+    redirectTo: `${getSiteUrl()}/auth/callback?next=/set-password`,
   });
 
   if (error) {
