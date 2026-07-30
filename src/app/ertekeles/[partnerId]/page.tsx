@@ -1,6 +1,11 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { mintReviewToken } from "@/lib/review-token";
 import { GuestReviewFlow } from "./GuestReviewFlow";
+
+// Rendered per request so every visitor gets a fresh, single-use token; a
+// cached page would hand the same spent token to everyone after the first.
+export const dynamic = "force-dynamic";
 
 export default async function GuestReviewPage({
   params,
@@ -65,6 +70,7 @@ export default async function GuestReviewPage({
       partnerId={partner.id}
       partnerName={partner.name}
       aspects={aspects}
+      token={mintReviewToken(partner.id)}
     />
   );
 }

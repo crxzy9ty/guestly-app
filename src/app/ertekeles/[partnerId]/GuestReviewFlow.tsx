@@ -15,10 +15,14 @@ export function GuestReviewFlow({
   partnerId,
   partnerName,
   aspects,
+  token,
 }: {
   partnerId: string;
   partnerName: string;
   aspects: Aspect[];
+  // Minted server-side per page load and single-use — see
+  // src/lib/review-token.ts. Passed straight back with the submission.
+  token: string;
 }) {
   const [screen, setScreen] = useState<
     "welcome" | "form" | "askReason" | "thanks" | "prizeEmail" | "prizeConfirmed" | "done" | "error"
@@ -68,6 +72,7 @@ export function GuestReviewFlow({
     startTransition(async () => {
       const result = await submitReview({
         partnerId,
+        token,
         ratings,
         reasons,
         email: withPrize ? email : undefined,

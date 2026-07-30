@@ -105,6 +105,9 @@ export interface Database {
           prize_id: string | null;
           winner_id: string | null;
           prize_consent_at: string | null;
+          // Nonce of the single-use token the submission was made with; a
+          // unique index on it is what prevents replaying one token.
+          request_nonce: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["submissions"]["Row"]> & { partner_id: string };
         Update: Partial<Database["public"]["Tables"]["submissions"]["Row"]>;
@@ -268,6 +271,19 @@ export interface Database {
           avg_score: number;
           score_count: number;
         }[];
+      };
+      // The single write path for guest reviews. service_role only — anon
+      // holds no INSERT on submissions any more, by design.
+      submit_guest_review: {
+        Args: {
+          p_partner_id: string;
+          p_request_nonce: string;
+          p_email: string | null;
+          p_prize_id: string | null;
+          p_prize_consent_at: string | null;
+          p_scores: { aspect_key: string; score: number; reason: string | null }[];
+        };
+        Returns: string;
       };
     };
     Enums: {
