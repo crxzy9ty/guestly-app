@@ -39,14 +39,27 @@ export type EmailOutcome = "sent" | "failed" | "not-configured";
 
 // Never throws: delivery is a best-effort side effect and must not undo the
 // draw or the demo request it is attached to.
-export async function sendEmail(input: { to: string; subject: string; html: string }): Promise<EmailOutcome> {
+export async function sendEmail(input: {
+  to: string;
+  subject: string;
+  html: string;
+  /** Plain-text alternative. Its absence is itself a spam signal — legitimate
+   *  senders produce multipart mail, bulk senders often don't. */
+  text?: string;
+}): Promise<EmailOutcome> {
   const client = getClient();
   if (!client) {
     console.warn(`[email] RESEND_API_KEY not set — skipped sending "${input.subject}" to ${input.to}`);
     return "not-configured";
   }
 
-  const { error } = await client.emails.send({ from: FROM, to: input.to, subject: input.subject, html: input.html });
+  const { error } = await client.emails.send({
+    from: FROM,
+    to: input.to,
+    subject: input.subject,
+    html: input.html,
+    text: input.text,
+  });
   if (error) {
     console.error(`[email] send failed (from=${FROM}, to=${input.to}):`, error);
     return "failed";

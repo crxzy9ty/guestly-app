@@ -134,14 +134,43 @@ export async function drawWinnerForPartner(
 
   if (updated.email) {
     const { data: partner } = await supabase.from("partners").select("name").eq("id", partnerId).maybeSingle();
+    const venue = partner?.name ?? "vendéglátóhelyünk";
+    const code = updated.winner_id!;
+
+    // Subject deliberately leads with the VENUE, not "Gratulálunk, nyertél!".
+    // The old wording — congratulations, "you won", an emoji, from a sender the
+    // recipient has never seen — is the exact shape of a prize scam, and spam
+    // filters have been trained on it for decades. Naming the place the guest
+    // was at an hour ago makes the mail both recognisable to them and specific
+    // enough not to read as bulk.
     emailStatus = await sendEmail({
       to: updated.email,
-      subject: "Gratulálunk, nyertél! 🎉",
+      subject: `${venue} — a mai sorsolás nyertese vagy`,
+      // A plain-text alternative is sent alongside the HTML: its absence is
+      // itself a small spam signal, and it is what a watch or a text-only
+      // client will show.
+      text: [
+        `Szia!`,
+        ``,
+        `A(z) ${venue} napi sorsolásán te nyertél — köszönjük, hogy értékelted a helyet.`,
+        ``,
+        `A kupon-kódod: ${code}`,
+        ``,
+        `Legközelebbi látogatásodkor mutasd meg ezt a kódot a pultnál. Nincs szükség appra vagy regisztrációra.`,
+        ``,
+        `Ezt a levelet azért kaptad, mert a(z) ${venue} értékelése után megadtad az e-mail címed a napi sorsoláshoz. A címedet másra nem használjuk, és hírlevelet nem küldünk.`,
+        `Guestly`,
+      ].join("\n"),
       html: `
         <p>Szia!</p>
-        <p>Kisorsoltunk téged a(z) <strong>${escapeHtml(partner?.name ?? "egységünk")}</strong> napi nyereményjátékában.</p>
-        <p>A kupon-kódod: <strong style="font-size:18px">${updated.winner_id}</strong></p>
-        <p>Legközelebbi látogatásodkor csak mutasd meg ezt a kódot a pultnál — nincs szükség appra vagy regisztrációra.</p>
+        <p>A(z) <strong>${escapeHtml(venue)}</strong> napi sorsolásán te nyertél — köszönjük, hogy értékelted a helyet.</p>
+        <p>A kupon-kódod: <strong style="font-size:20px;letter-spacing:1px">${escapeHtml(code)}</strong></p>
+        <p>Legközelebbi látogatásodkor mutasd meg ezt a kódot a pultnál. Nincs szükség appra vagy regisztrációra.</p>
+        <hr style="border:none;border-top:1px solid #e6e4ee;margin:24px 0">
+        <p style="font-size:12px;color:#6b6880;line-height:1.6">
+          Ezt a levelet azért kaptad, mert a(z) ${escapeHtml(venue)} értékelése után megadtad az e-mail
+          címed a napi sorsoláshoz. A címedet másra nem használjuk, és hírlevelet nem küldünk.<br>Guestly
+        </p>
       `,
     });
   }

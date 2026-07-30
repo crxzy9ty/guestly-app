@@ -52,13 +52,26 @@ export async function submitDemoRequest(
   // email fails to send (e.g. RESEND_API_KEY not configured yet), and even
   // if we skip sending because of the throttle above.
   if (!recentlySentToThisEmail) {
+    const firstName = name.split(" ")[0];
     await sendEmail({
       to: email,
-      subject: "Megkaptuk a demó-kérésed — Guestly",
+      subject: `Megkaptuk a demó-kérésed — ${business}`,
+      text: [
+        `Szia ${firstName}!`,
+        ``,
+        `Köszönjük a jelentkezést a(z) ${business} nevében. Hamarosan felvesszük veled a kapcsolatot, hogy egyeztessünk egy 15 perces bemutatót.`,
+        ``,
+        `Ezt a levelet azért kaptad, mert demót kértél a guestly-app-gamma.vercel.app oldalon.`,
+        `Guestly`,
+      ].join("\n"),
       html: `
-        <p>Szia ${escapeHtml(name.split(" ")[0])}!</p>
+        <p>Szia ${escapeHtml(firstName)}!</p>
         <p>Köszönjük a jelentkezést a(z) <strong>${escapeHtml(business)}</strong> nevében — hamarosan felvesszük veled a kapcsolatot,
         hogy egyeztessünk egy 15 perces bemutatót.</p>
+        <hr style="border:none;border-top:1px solid #e6e4ee;margin:24px 0">
+        <p style="font-size:12px;color:#6b6880">
+          Ezt a levelet azért kaptad, mert demót kértél a Guestly oldalán.
+        </p>
       `,
     });
   }

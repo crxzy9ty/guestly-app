@@ -293,9 +293,15 @@ export function GuestReviewFlow({
         {/* "Másnap reggel", not "a mai nap végén": the draw runs in the small
             hours for the completed previous day, so that nobody who rates late
             in the evening is left out of it. */}
-        <p className="mb-6 text-sm text-white/70">
+        <p className="mb-3 text-sm leading-relaxed text-white/70">
           A mai nap összes értékelője között másnap reggel sorsolunk. Ha nyersz, e-mailben kapsz egy
           egyedi kupon-kódot.
+        </p>
+        {/* Worth saying out loud: a first message from an unfamiliar sender
+            lands in spam often enough that a winner who never thinks to look
+            there simply doesn't get their prize. */}
+        <p className="text-xs leading-relaxed text-white/50">
+          Ha nem találod a levelet, nézd meg a spam mappát is.
         </p>
       </Centered>
     );
