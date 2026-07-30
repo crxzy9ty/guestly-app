@@ -1,8 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Heatmap } from "@/app/dashboard/Heatmap";
+import { PERIODS, type PeriodValue } from "@/lib/dashboard/period";
 import type { AspectAverage, HeatmapGrid } from "@/lib/dashboard/heatmap";
+
+// The period lives in the URL rather than component state so it survives a
+// refresh, can be linked to a colleague, and — since the aggregation happens
+// in SQL — is what the server actually queries on, not a client-side filter
+// over rows already fetched.
+function PeriodPicker({ period }: { period: PeriodValue }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  const select = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("period", value);
+    // Preserves ?partner= on the owner dashboard, where the venue switcher
+    // uses the same query string.
+    startTransition(() => router.push(`${pathname}?${params.toString()}`));
+  };
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap gap-1.5 rounded-lg bg-line p-[3px]">
+        {PERIODS.map((p) => (
+          <button
+            key={p.value}
+            onClick={() => select(p.value)}
+            className={`rounded-md px-3 py-1.5 text-xs font-bold ${
+              period === p.value ? "bg-paper text-ink" : "text-slate"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      {isPending && <span className="text-xs text-slate">Frissítés…</span>}
+    </div>
+  );
+}
 
 // The per-venue "what is actually happening here" panel: one tile per aspect,
 // the weak-spot alert, and the selected aspect's weekday x hour heatmap.
@@ -16,11 +56,13 @@ export function VenueInsights({
   grids,
   alertMessage,
   totalSubmissions,
+  period,
 }: {
   aspectAverages: AspectAverage[];
   grids: Record<string, HeatmapGrid>;
   alertMessage: string | null;
   totalSubmissions: number;
+  period: PeriodValue;
 }) {
   const [selectedAspect, setSelectedAspect] = useState(aspectAverages[0]?.key ?? "");
 
@@ -34,15 +76,23 @@ export function VenueInsights({
 
   if (totalSubmissions === 0) {
     return (
-      <div className="rounded-xl border border-line bg-paper p-6 text-center text-sm text-slate">
-        Ehhez az egységhez még nem érkezett értékelés — amint az első vendég beküldi, itt fog
-        megjelenni.
-      </div>
+      <>
+        <PeriodPicker period={period} />
+        {/* Distinguishes "nothing in this window" from "nothing ever" — without
+            it, narrowing to 7 days on a quiet venue reads as data loss. */}
+        <div className="rounded-xl border border-line bg-paper p-6 text-center text-sm text-slate">
+          {period === "all"
+            ? "Ehhez az egységhez még nem érkezett értékelés — amint az első vendég beküldi, itt fog megjelenni."
+            : "Ebben az időszakban nem érkezett értékelés. Válassz hosszabb időszakot a fenti sávban."}
+        </div>
+      </>
     );
   }
 
   return (
     <>
+      <PeriodPicker period={period} />
+
       <div className="mb-5 grid grid-cols-2 gap-2.5">
         {aspectAverages.map((a) => (
           <button
@@ -72,7 +122,10 @@ export function VenueInsights({
       )}
 
       <div className="rounded-2xl border border-line bg-paper p-4">
-        <div className="mb-3 text-sm font-bold text-ink">{activeAspect?.label} — nap és óra szerint</div>
+        <div className="mb-1 text-sm font-bold text-ink">{activeAspect?.label} — nap és óra szerint</div>
+        <div className="mb-3 text-[11px] text-slate">
+          A kiválasztott időszak értékelései hétköznap és napszak szerint összesítve.
+        </div>
         <Heatmap grid={(activeAspect && grids[activeAspect.key]) ?? []} />
       </div>
     </>

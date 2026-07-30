@@ -5,6 +5,7 @@ import { VenueSwitcher } from "./VenueSwitcher";
 import { OwnerDashboardClient } from "./OwnerDashboardClient";
 import type { LogRow } from "./LogTable";
 import { gridsByAspect, joinAspectAverages, weakestBucket, type HeatmapBucketRow } from "@/lib/dashboard/heatmap";
+import { parsePeriod, periodDays } from "@/lib/dashboard/period";
 
 // How many recent submissions the Napló shows. Bounded on purpose: this is the
 // one query here that returns row-level data rather than aggregates, and
@@ -16,9 +17,11 @@ type PartnerRow = { id: string; name: string; question_set_id: string | null; al
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ partner?: string }>;
+  searchParams: Promise<{ partner?: string; period?: string }>;
 }) {
-  const { partner: partnerParam } = await searchParams;
+  const { partner: partnerParam, period: periodParam } = await searchParams;
+  const period = parsePeriod(periodParam);
+  const sinceDays = periodDays(period);
   const supabase = await createClient();
   const user = await getCachedUser();
 
@@ -65,19 +68,20 @@ export default async function DashboardPage({
         .select("key, label, icon")
         .eq("question_set_id", selected.question_set_id ?? "")
         .order("sort_order"),
+      // The *_range RPCs aggregate within the selected window in SQL. Filtering
+      // client-side instead would mean fetching every score row first — the
+      // exact thing ..._aggregate_stats_views.sql was written to stop.
       supabase
-        .from("partner_summary_stats")
-        .select("review_count, avg_score")
-        .eq("partner_id", selected.id)
+        .rpc("partner_summary_range", { target_partner_id: selected.id, since_days: sinceDays })
         .maybeSingle(),
-      supabase
-        .from("partner_aspect_stats")
-        .select("aspect_key, avg_score, score_count")
-        .eq("partner_id", selected.id),
-      supabase
-        .from("partner_heatmap_stats")
-        .select("aspect_key, day_index, hour_bucket, avg_score, score_count")
-        .eq("partner_id", selected.id),
+      supabase.rpc("partner_aspect_stats_range", {
+        target_partner_id: selected.id,
+        since_days: sinceDays,
+      }),
+      supabase.rpc("partner_heatmap_stats_range", {
+        target_partner_id: selected.id,
+        since_days: sinceDays,
+      }),
       supabase
         .from("submission_log_view")
         .select("id, created_at, scores, reasons")
@@ -93,7 +97,7 @@ export default async function DashboardPage({
     (heatmapRows ?? []) as HeatmapBucketRow[],
   );
 
-  // Counted in SQL over the whole history, so this stays correct even though
+  // Counted in SQL across the selected window, so it stays correct even though
   // the Napló below only carries the most recent LOG_ROW_LIMIT rows.
   const totalSubmissions = Number(summary?.review_count ?? 0);
 
@@ -128,6 +132,7 @@ export default async function DashboardPage({
       </div>
 
       <OwnerDashboardClient
+        period={period}
         aspectAverages={aspectAverages}
         grids={grids}
         alertMessage={alertMessage}

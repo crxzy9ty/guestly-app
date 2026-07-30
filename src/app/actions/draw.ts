@@ -63,7 +63,12 @@ export async function drawTodayWinner(adminSlug: string, partnerId: string): Pro
   }
 
   const chosen = eligible[Math.floor(Math.random() * eligible.length)];
-  const winnerId = `WIN-${crypto.randomUUID().slice(0, 5).toUpperCase()}`;
+  // 10 hex characters (~1.1e12 codes) rather than the original 5 (~1.05M),
+  // where the birthday bound put a collision at roughly 38% likely by the
+  // 1000th coupon — two winners holding the same code, indistinguishable to
+  // whoever is at the counter. Unique indexes on submissions.winner_id and
+  // prize_draws.winner_id now enforce this rather than trusting the odds.
+  const winnerId = `WIN-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
 
   // The unique(partner_id, draw_date) constraint is the real race guard: if
   // another request already inserted today's draw between our SELECT above

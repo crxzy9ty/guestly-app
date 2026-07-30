@@ -8,6 +8,7 @@ import {
   weakestBucket,
   type HeatmapBucketRow,
 } from "@/lib/dashboard/heatmap";
+import { parsePeriod, periodDays, periodLabel } from "@/lib/dashboard/period";
 
 // Admin view of a single venue, showing exactly what that venue's owner sees
 // on their own dashboard (same VenueInsights component, same aggregate views).
@@ -17,10 +18,15 @@ import {
 // heatmap aggregation without logging in as an owner.
 export default async function AdminVenueDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ adminSlug: string; partnerId: string }>;
+  searchParams: Promise<{ period?: string }>;
 }) {
   const { adminSlug, partnerId } = await params;
+  const { period: periodParam } = await searchParams;
+  const period = parsePeriod(periodParam);
+  const sinceDays = periodDays(period);
   const supabase = await createClient();
 
   const { data: partner } = await supabase
@@ -41,18 +47,16 @@ export default async function AdminVenueDetailPage({
         .eq("question_set_id", partner.question_set_id ?? "")
         .order("sort_order"),
       supabase
-        .from("partner_summary_stats")
-        .select("review_count, prize_count")
-        .eq("partner_id", partner.id)
+        .rpc("partner_summary_range", { target_partner_id: partner.id, since_days: sinceDays })
         .maybeSingle(),
-      supabase
-        .from("partner_aspect_stats")
-        .select("aspect_key, avg_score, score_count")
-        .eq("partner_id", partner.id),
-      supabase
-        .from("partner_heatmap_stats")
-        .select("aspect_key, day_index, hour_bucket, avg_score, score_count")
-        .eq("partner_id", partner.id),
+      supabase.rpc("partner_aspect_stats_range", {
+        target_partner_id: partner.id,
+        since_days: sinceDays,
+      }),
+      supabase.rpc("partner_heatmap_stats_range", {
+        target_partner_id: partner.id,
+        since_days: sinceDays,
+      }),
     ]);
 
   const safeAspects = aspects ?? [];
@@ -90,7 +94,10 @@ export default async function AdminVenueDetailPage({
       {partner.address && <div className="mb-4 text-sm text-slate">{partner.address}</div>}
 
       <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate">
-        <span>{totalSubmissions} értékelés összesen</span>
+        <span>
+          {totalSubmissions} értékelés
+          {period === "all" ? " összesen" : ` — ${periodLabel(period).toLowerCase()}`}
+        </span>
         <span>{Number(summary?.prize_count ?? 0)} sorsolásra jelentkezett</span>
         <span>Riasztási küszöb: {partner.alert_threshold}</span>
         <Link href={`/${adminSlug}/log?partner=${partner.id}`} className="font-semibold text-violet">
@@ -105,6 +112,7 @@ export default async function AdminVenueDetailPage({
       </div>
 
       <VenueInsights
+        period={period}
         aspectAverages={aspectAverages}
         grids={grids}
         alertMessage={alertMessage}

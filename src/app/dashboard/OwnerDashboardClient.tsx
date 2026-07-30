@@ -5,6 +5,7 @@ import { LogTable, type LogRow } from "./LogTable";
 import { HelpPanel } from "@/app/HelpPanel";
 import { VenueInsights } from "@/app/VenueInsights";
 import { ownerHelpFaqs } from "@/lib/help-content";
+import { periodLabel, type PeriodValue } from "@/lib/dashboard/period";
 import type { AspectAverage, HeatmapGrid } from "@/lib/dashboard/heatmap";
 
 export function OwnerDashboardClient({
@@ -14,6 +15,7 @@ export function OwnerDashboardClient({
   totalSubmissions,
   logRows,
   aspects,
+  period,
 }: {
   aspectAverages: AspectAverage[];
   grids: Record<string, HeatmapGrid>;
@@ -21,12 +23,19 @@ export function OwnerDashboardClient({
   totalSubmissions: number;
   logRows: LogRow[];
   aspects: { key: string; label: string }[];
+  period: PeriodValue;
 }) {
   const [view, setView] = useState<"overview" | "log" | "help">("overview");
 
   return (
     <div>
-      <div className="mb-5 text-sm text-slate">{totalSubmissions} értékelés összesen</div>
+      {/* Names the window explicitly: this count now moves when the period
+          changes, and an unqualified "43 értékelés összesen" would read as a
+          total and look like reviews had gone missing. */}
+      <div className="mb-5 text-sm text-slate">
+        {totalSubmissions} értékelés
+        {period === "all" ? " összesen" : ` — ${periodLabel(period).toLowerCase()}`}
+      </div>
 
       <div className="mb-5 flex w-fit gap-1.5 rounded-lg bg-line p-[3px]">
         {(
@@ -54,6 +63,7 @@ export function OwnerDashboardClient({
         // Aspect tiles + alert + heatmap live in VenueInsights so the admin
         // venue detail page renders the exact same panel from the same code.
         <VenueInsights
+          period={period}
           aspectAverages={aspectAverages}
           grids={grids}
           alertMessage={alertMessage}

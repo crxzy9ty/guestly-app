@@ -247,6 +247,28 @@ export interface Database {
         Args: { h: number };
         Returns: number;
       };
+      // Date-windowed variants of the aggregate views, added by
+      // ..._partner_stats_date_range.sql. since_days null = all time. They are
+      // functions rather than filterable views because a view would need a date
+      // dimension, and at day granularity that exceeds max_rows again.
+      partner_summary_range: {
+        Args: { target_partner_id: string; since_days: number | null };
+        Returns: { review_count: number; prize_count: number; avg_score: number | null }[];
+      };
+      partner_aspect_stats_range: {
+        Args: { target_partner_id: string; since_days: number | null };
+        Returns: { aspect_key: string; avg_score: number; score_count: number }[];
+      };
+      partner_heatmap_stats_range: {
+        Args: { target_partner_id: string; since_days: number | null };
+        Returns: {
+          aspect_key: string;
+          day_index: number;
+          hour_bucket: number;
+          avg_score: number;
+          score_count: number;
+        }[];
+      };
     };
     Enums: {
       app_role: AppRole;
