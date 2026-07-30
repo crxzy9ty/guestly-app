@@ -11,7 +11,9 @@ export default async function AdminPartnersPage({
 
   const { data: partners } = await supabase
     .from("partners")
-    .select("id, name, address, phone, email, contact_name, contact_phone, alert_threshold")
+    .select(
+      "id, name, address, phone, email, contact_name, contact_phone, alert_threshold, subscription_start, subscription_end",
+    )
     .order("name");
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";

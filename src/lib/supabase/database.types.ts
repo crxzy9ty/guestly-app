@@ -37,6 +37,10 @@ export interface Database {
           contact_phone: string | null;
           question_set_id: string | null;
           alert_threshold: number;
+          // Derived status lives in src/lib/subscription.ts — deliberately not
+          // stored, so it can't drift out of sync with these dates.
+          subscription_start: string | null;
+          subscription_end: string | null;
           created_at: string;
           updated_at: string;
         };

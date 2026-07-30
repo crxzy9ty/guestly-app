@@ -6,6 +6,7 @@ import { createPartner, updatePartner, deletePartner } from "@/app/actions/partn
 import { QRModal } from "./QRModal";
 import { InviteOwnerModal } from "./InviteOwnerModal";
 import { downloadCsv } from "@/lib/csv";
+import { getSubscriptionStatus, subscriptionSortKey } from "@/lib/subscription";
 
 export type Partner = {
   id: string;
@@ -16,6 +17,8 @@ export type Partner = {
   contact_name: string | null;
   contact_phone: string | null;
   alert_threshold: number;
+  subscription_start: string | null;
+  subscription_end: string | null;
 };
 
 const inputClass = "h-10 w-full rounded-lg border border-line bg-paper px-3 text-sm text-ink outline-none";
@@ -52,6 +55,31 @@ function PartnerFields({ defaults }: { defaults?: Partial<Partner> }) {
           <input name="contact_phone" defaultValue={defaults?.contact_phone ?? ""} className={inputClass} />
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-2.5">
+        <div>
+          <label className={labelClass}>Előfizetés kezdete</label>
+          <input
+            name="subscription_start"
+            type="date"
+            defaultValue={defaults?.subscription_start ?? ""}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Előfizetés vége</label>
+          <input
+            name="subscription_end"
+            type="date"
+            defaultValue={defaults?.subscription_end ?? ""}
+            className={inputClass}
+          />
+        </div>
+      </div>
+      <p className="-mt-1 text-[11px] leading-relaxed text-slate">
+        Mindkettő opcionális. Üresen hagyva &quot;Nincs előfizetés&quot; állapot. A lejárat nem töröl és nem
+        kapcsol ki semmit — az egység adatai és a QR-kódja megmaradnak, csak a jelzés változik a
+        táblázatban.
+      </p>
       <div>
         <label className={labelClass}>Riasztási küszöb</label>
         <input
@@ -71,6 +99,25 @@ function PartnerFields({ defaults }: { defaults?: Partial<Partner> }) {
   );
 }
 
+// Colour comes from getSubscriptionStatus so the scale is defined in exactly
+// one place — the table, and anywhere else that shows this later, can't drift.
+function SubscriptionPill({ partner }: { partner: Partner }) {
+  const status = getSubscriptionStatus(partner.subscription_start, partner.subscription_end);
+  return (
+    <span
+      title={
+        partner.subscription_start || partner.subscription_end
+          ? `${partner.subscription_start ?? "—"} → ${partner.subscription_end ?? "nyitott"}`
+          : "Nincs előfizetési időszak megadva"
+      }
+      className="inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-bold"
+      style={{ background: status.color.bg, color: status.color.fg }}
+    >
+      {status.label}
+    </span>
+  );
+}
+
 export function PartnerManager({
   adminSlug,
   partners,
@@ -86,22 +133,56 @@ export function PartnerManager({
   const [qrFor, setQrFor] = useState<Partner | null>(null);
   const [inviteFor, setInviteFor] = useState<Partner | null>(null);
   const [search, setSearch] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [sortByExpiry, setSortByExpiry] = useState(false);
 
   const boundCreate = createPartner.bind(null, adminSlug);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return partners;
-    return partners.filter((p) =>
-      [p.name, p.address, p.email, p.contact_name, p.phone].filter(Boolean).join(" ").toLowerCase().includes(q),
+    const matched = q
+      ? partners.filter((p) =>
+          [p.name, p.address, p.email, p.contact_name, p.phone].filter(Boolean).join(" ").toLowerCase().includes(q),
+        )
+      : partners;
+
+    if (!sortByExpiry) return matched;
+
+    // Expired first, then soonest-to-expire — the renewal worklist, in order.
+    return [...matched].sort(
+      (a, b) =>
+        subscriptionSortKey(getSubscriptionStatus(a.subscription_start, a.subscription_end)) -
+        subscriptionSortKey(getSubscriptionStatus(b.subscription_start, b.subscription_end)),
     );
-  }, [partners, search]);
+  }, [partners, search, sortByExpiry]);
 
   const exportCsv = () => {
     downloadCsv(
       `guestly-partnerek-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["nev", "cim", "telefon", "email", "kapcsolattarto", "kapcsolattarto_telefon", "riasztasi_kuszob"],
-      filtered.map((p) => [p.name, p.address, p.phone, p.email, p.contact_name, p.contact_phone, p.alert_threshold]),
+      [
+        "nev",
+        "cim",
+        "telefon",
+        "email",
+        "kapcsolattarto",
+        "kapcsolattarto_telefon",
+        "riasztasi_kuszob",
+        "elofizetes_kezdete",
+        "elofizetes_vege",
+        "elofizetes_allapota",
+      ],
+      filtered.map((p) => [
+        p.name,
+        p.address,
+        p.phone,
+        p.email,
+        p.contact_name,
+        p.contact_phone,
+        p.alert_threshold,
+        p.subscription_start,
+        p.subscription_end,
+        getSubscriptionStatus(p.subscription_start, p.subscription_end).label,
+      ]),
     );
   };
 
@@ -119,12 +200,14 @@ export function PartnerManager({
         {showAddForm && (
           <form
             action={async (formData) => {
-              await boundCreate(formData);
-              setShowAddForm(false);
+              const res = await boundCreate(formData);
+              setFormError(res.error);
+              if (!res.error) setShowAddForm(false);
             }}
             className="mt-3.5"
           >
             <PartnerFields />
+            {formError && <p className="mt-2.5 text-sm font-medium text-magenta">{formError}</p>}
             <button type="submit" className="mt-3 h-10 rounded-lg bg-ink px-5 text-sm font-bold text-white">
               Egység hozzáadása
             </button>
@@ -139,6 +222,17 @@ export function PartnerManager({
           placeholder="Keresés név, cím, e-mail vagy kapcsolattartó szerint…"
           className="h-9 min-w-[220px] flex-1 rounded-lg border border-line bg-paper px-3 text-xs text-ink outline-none"
         />
+        <button
+          onClick={() => setSortByExpiry((v) => !v)}
+          className="h-9 whitespace-nowrap rounded-lg px-3 text-xs font-bold"
+          style={{
+            border: sortByExpiry ? "1px solid var(--color-ink)" : "1px solid var(--color-line)",
+            background: sortByExpiry ? "var(--color-ink)" : "var(--color-paper)",
+            color: sortByExpiry ? "#fff" : "var(--color-ink)",
+          }}
+        >
+          Lejárat szerint
+        </button>
         <button onClick={exportCsv} className="h-9 rounded-lg border border-line px-3.5 text-xs font-bold text-ink">
           Exportálás (CSV)
         </button>
@@ -150,6 +244,7 @@ export function PartnerManager({
           <thead>
             <tr className="sticky top-0 z-10 bg-mist text-left">
               <th className="px-3 py-2 font-bold text-slate">Név</th>
+              <th className="px-3 py-2 font-bold text-slate">Előfizetés</th>
               <th className="px-3 py-2 font-bold text-slate">Cím</th>
               <th className="px-3 py-2 font-bold text-slate">Kapcsolattartó</th>
               <th className="px-3 py-2 text-center font-bold text-slate">Riasztási küszöb</th>
@@ -160,14 +255,16 @@ export function PartnerManager({
             {filtered.map((p) =>
               editingId === p.id ? (
                 <tr key={p.id} className="border-t border-line">
-                  <td colSpan={5} className="px-3 py-3">
+                  <td colSpan={6} className="px-3 py-3">
                     <form
                       action={async (formData) => {
-                        await updatePartner(adminSlug, p.id, formData);
-                        setEditingId(null);
+                        const res = await updatePartner(adminSlug, p.id, formData);
+                        setFormError(res.error);
+                        if (!res.error) setEditingId(null);
                       }}
                     >
                       <PartnerFields defaults={p} />
+                      {formError && <p className="mt-2.5 text-sm font-medium text-magenta">{formError}</p>}
                       <div className="mt-3 flex gap-2">
                         <button type="submit" className="h-9 rounded-lg bg-ink px-4 text-xs font-bold text-white">
                           Mentés
@@ -186,6 +283,9 @@ export function PartnerManager({
               ) : (
                 <tr key={p.id} className="border-t border-line">
                   <td className="px-3 py-2 font-bold text-ink">{p.name}</td>
+                  <td className="px-3 py-2">
+                    <SubscriptionPill partner={p} />
+                  </td>
                   <td className="max-w-[220px] px-3 py-2 text-slate">{p.address ?? "—"}</td>
                   <td className="px-3 py-2 text-slate">{p.contact_name ?? "—"}</td>
                   <td className="px-3 py-2 text-center font-bold text-ink">{p.alert_threshold.toFixed(1)}</td>
@@ -214,8 +314,9 @@ export function PartnerManager({
                           <span className="inline-flex gap-1.5">
                             <button
                               onClick={async () => {
-                                await deletePartner(adminSlug, p.id);
-                                setConfirmDeleteId(null);
+                                const res = await deletePartner(adminSlug, p.id);
+                                setFormError(res.error);
+                                if (!res.error) setConfirmDeleteId(null);
                               }}
                               className="rounded-md bg-magenta px-2 py-1 font-bold text-white"
                             >
@@ -241,7 +342,7 @@ export function PartnerManager({
             )}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-slate">
+                <td colSpan={6} className="px-3 py-6 text-center text-slate">
                   {partners.length === 0 ? "Nincs még felvett egység." : "Nincs a keresésnek megfelelő egység."}
                 </td>
               </tr>
@@ -249,6 +350,11 @@ export function PartnerManager({
           </tbody>
         </table>
       </div>
+
+      {/* Delete failures have no form to render into, so they surface here. */}
+      {formError && !showAddForm && editingId === null && (
+        <p className="mt-3 text-sm font-medium text-magenta">{formError}</p>
+      )}
 
       {qrFor && <QRModal partner={qrFor} siteUrl={siteUrl} onClose={() => setQrFor(null)} />}
       {inviteFor && <InviteOwnerModal adminSlug={adminSlug} partner={inviteFor} onClose={() => setInviteFor(null)} />}
