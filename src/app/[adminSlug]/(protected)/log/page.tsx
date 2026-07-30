@@ -22,9 +22,14 @@ export default async function AdminLogPage({
   const selectedPartner = safePartners.find((p) => p.id === partnerParam) ?? null;
   const partnerNameById = new Map(safePartners.map((p) => [p.id, p.name]));
 
+  // submission_log_view returns one row per submission with its scores/reasons
+  // already folded in, replacing the previous two-step fetch that passed up to
+  // 300 uuids back through `.in("submission_id", ids)` — a query string that
+  // grew past what a URL can carry, and a second response that max_rows could
+  // silently truncate. See supabase/migrations/..._aggregate_stats_views.sql.
   let query = supabase
-    .from("submissions")
-    .select("id, partner_id, created_at, email, prize_id, winner_id")
+    .from("submission_log_view")
+    .select("id, partner_id, created_at, email, prize_id, winner_id, scores, reasons")
     .order("created_at", { ascending: false })
     .limit(300);
   if (selectedPartner) query = query.eq("partner_id", selectedPartner.id);
@@ -41,36 +46,16 @@ export default async function AdminLogPage({
     query,
     supabase.from("question_aspects").select("key, label").eq("question_set_id", questionSetId).order("sort_order"),
   ]);
-  const safeSubmissions = submissions ?? [];
-
-  const submissionIds = safeSubmissions.map((s) => s.id);
-  const { data: scores } =
-    submissionIds.length > 0
-      ? await supabase
-          .from("submission_scores")
-          .select("submission_id, aspect_key, score, reason")
-          .in("submission_id", submissionIds)
-      : { data: [] as { submission_id: string; aspect_key: string; score: number; reason: string | null }[] };
-
-  const rowsMap = new Map<string, AdminLogRow>();
-  for (const s of safeSubmissions) {
-    rowsMap.set(s.id, {
-      id: s.id,
-      createdAt: s.created_at,
-      venue: partnerNameById.get(s.partner_id) ?? "—",
-      email: s.email,
-      prizeId: s.prize_id,
-      winnerId: s.winner_id,
-      scores: {},
-      reasons: {},
-    });
-  }
-  for (const s of scores ?? []) {
-    const row = rowsMap.get(s.submission_id);
-    if (!row) continue;
-    row.scores[s.aspect_key] = s.score;
-    if (s.reason) row.reasons[s.aspect_key] = s.reason;
-  }
+  const rows: AdminLogRow[] = (submissions ?? []).map((s) => ({
+    id: s.id,
+    createdAt: s.created_at,
+    venue: partnerNameById.get(s.partner_id) ?? "—",
+    email: s.email,
+    prizeId: s.prize_id,
+    winnerId: s.winner_id,
+    scores: s.scores ?? {},
+    reasons: s.reasons ?? {},
+  }));
 
   return (
     <div>
@@ -80,7 +65,7 @@ export default async function AdminLogPage({
         partners={safePartners.map((p) => ({ id: p.id, name: p.name }))}
         selectedPartnerId={selectedPartner?.id ?? null}
         aspects={aspects ?? []}
-        rows={Array.from(rowsMap.values())}
+        rows={rows}
       />
     </div>
   );

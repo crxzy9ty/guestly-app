@@ -4,7 +4,12 @@ import { signOutOwner } from "@/app/actions/auth";
 import { VenueSwitcher } from "./VenueSwitcher";
 import { OwnerDashboardClient } from "./OwnerDashboardClient";
 import type { LogRow } from "./LogTable";
-import { buildHeatmapGrid, computeAspectAverages, weakestBucket } from "@/lib/dashboard/heatmap";
+import { gridsByAspect, joinAspectAverages, weakestBucket, type HeatmapBucketRow } from "@/lib/dashboard/heatmap";
+
+// How many recent submissions the Napló shows. Bounded on purpose: this is the
+// one query here that returns row-level data rather than aggregates, and
+// PostgREST silently truncates at max_rows = 1000 (supabase/config.toml).
+const LOG_ROW_LIMIT = 300;
 
 type PartnerRow = { id: string; name: string; question_set_id: string | null; alert_threshold: number };
 
@@ -48,50 +53,49 @@ export default async function DashboardPage({
 
   const selected = partners.find((p) => p.id === partnerParam) ?? partners[0];
 
-  // Both only depend on `selected`, not on each other — fetched in parallel.
-  const [{ data: aspects }, { data: submissions }] = await Promise.all([
-    supabase
-      .from("question_aspects")
-      .select("key, label, icon")
-      .eq("question_set_id", selected.question_set_id ?? "")
-      .order("sort_order"),
-    supabase
-      .from("submissions_owner_view")
-      .select("id, created_at")
-      .eq("partner_id", selected.id)
-      .order("created_at", { ascending: false })
-      .limit(1000),
-  ]);
+  // Four independent reads, none derived from another, so they go out together.
+  // Every one of them is bounded: the aggregates are grouped in SQL (see
+  // supabase/migrations/..._aggregate_stats_views.sql) and the log is capped, so
+  // none of this scales with the number of reviews the way the previous
+  // fetch-everything-and-average-in-JS version did.
+  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: logs }] =
+    await Promise.all([
+      supabase
+        .from("question_aspects")
+        .select("key, label, icon")
+        .eq("question_set_id", selected.question_set_id ?? "")
+        .order("sort_order"),
+      supabase
+        .from("partner_summary_stats")
+        .select("review_count, avg_score")
+        .eq("partner_id", selected.id)
+        .maybeSingle(),
+      supabase
+        .from("partner_aspect_stats")
+        .select("aspect_key, avg_score, score_count")
+        .eq("partner_id", selected.id),
+      supabase
+        .from("partner_heatmap_stats")
+        .select("aspect_key, day_index, hour_bucket, avg_score, score_count")
+        .eq("partner_id", selected.id),
+      supabase
+        .from("submission_log_view")
+        .select("id, created_at, scores, reasons")
+        .eq("partner_id", selected.id)
+        .order("created_at", { ascending: false })
+        .limit(LOG_ROW_LIMIT),
+    ]);
 
   const safeAspects = aspects ?? [];
-  const submissionRows = submissions ?? [];
-  const submissionIds = submissionRows.map((s) => s.id);
-
-  const { data: scores } =
-    submissionIds.length > 0
-      ? await supabase
-          .from("submission_scores")
-          .select("submission_id, aspect_key, score, reason")
-          .in("submission_id", submissionIds)
-      : { data: [] as { submission_id: string; aspect_key: string; score: number; reason: string | null }[] };
-
-  const safeScores = scores ?? [];
-  const createdAtBySubmission = new Map(submissionRows.map((s) => [s.id, s.created_at]));
-
-  const aspectAverages = computeAspectAverages(safeAspects, safeScores);
-
-  const grids = Object.fromEntries(
-    safeAspects.map((a) => [
-      a.key,
-      buildHeatmapGrid(
-        safeScores
-          .filter((s) => s.aspect_key === a.key)
-          .map((s) => ({ createdAt: createdAtBySubmission.get(s.submission_id)!, score: s.score })),
-      ),
-    ]),
+  const aspectAverages = joinAspectAverages(safeAspects, aspectStats ?? []);
+  const grids = gridsByAspect(
+    safeAspects.map((a) => a.key),
+    (heatmapRows ?? []) as HeatmapBucketRow[],
   );
 
-  const totalSubmissions = submissionRows.length;
+  // Counted in SQL over the whole history, so this stays correct even though
+  // the Napló below only carries the most recent LOG_ROW_LIMIT rows.
+  const totalSubmissions = Number(summary?.review_count ?? 0);
 
   let alertMessage: string | null = null;
   if (totalSubmissions >= 5) {
@@ -105,17 +109,15 @@ export default async function DashboardPage({
     }
   }
 
-  const rowsBySubmission = new Map<string, LogRow>();
-  for (const s of submissionRows) {
-    rowsBySubmission.set(s.id, { id: s.id, createdAt: s.created_at, scores: {}, reasons: {} });
-  }
-  for (const s of safeScores) {
-    const row = rowsBySubmission.get(s.submission_id);
-    if (!row) continue;
-    row.scores[s.aspect_key] = s.score;
-    if (s.reason) row.reasons[s.aspect_key] = s.reason;
-  }
-  const logRows = Array.from(rowsBySubmission.values()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  // submission_log_view already returns one row per submission with its scores
+  // and reasons folded into JSON objects, ordered newest-first by the query —
+  // no id-list round trip and no client-side regrouping needed.
+  const logRows: LogRow[] = (logs ?? []).map((row) => ({
+    id: row.id,
+    createdAt: row.created_at,
+    scores: row.scores ?? {},
+    reasons: row.reasons ?? {},
+  }));
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">

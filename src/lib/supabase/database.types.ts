@@ -180,6 +180,55 @@ export interface Database {
         };
         Relationships: [];
       };
+      // The four aggregate views added by ..._aggregate_stats_views.sql. They
+      // exist so the dashboards never fetch raw rows and average them in JS —
+      // see that migration's header for why that was a correctness bug, not
+      // just a performance one.
+      partner_aspect_stats: {
+        Row: {
+          partner_id: string;
+          aspect_key: string;
+          avg_score: number;
+          score_count: number;
+        };
+        Relationships: [];
+      };
+      partner_heatmap_stats: {
+        Row: {
+          partner_id: string;
+          aspect_key: string;
+          day_index: number;
+          hour_bucket: number;
+          avg_score: number;
+          score_count: number;
+        };
+        Relationships: [];
+      };
+      partner_summary_stats: {
+        Row: {
+          partner_id: string;
+          review_count: number;
+          prize_count: number;
+          reviews_24h: number;
+          reviews_7d: number;
+          avg_score: number | null;
+        };
+        Relationships: [];
+      };
+      submission_log_view: {
+        Row: {
+          id: string;
+          partner_id: string;
+          created_at: string;
+          // NULL for owners, real values for admins — masked in the view itself.
+          email: string | null;
+          prize_id: string | null;
+          winner_id: string | null;
+          scores: Record<string, number>;
+          reasons: Record<string, string>;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       is_admin: {
@@ -189,6 +238,10 @@ export interface Database {
       is_partner_member: {
         Args: { target_partner_id: string };
         Returns: boolean;
+      };
+      guestly_hour_bucket: {
+        Args: { h: number };
+        Returns: number;
       };
     };
     Enums: {

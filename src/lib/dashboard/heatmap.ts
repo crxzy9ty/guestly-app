@@ -1,63 +1,48 @@
-// Shared by src/app/dashboard/page.tsx (server-side aggregation) and
-// src/app/dashboard/Heatmap.tsx (rendering). Bucketing is done in a fixed
-// timezone (not the host machine's local time) so "péntek este" means the
-// same thing regardless of where the app happens to be deployed.
+// Presentation helpers for the owner/admin dashboards. The aggregation itself
+// (averages, weekday/hour bucketing, Budapest-local time conversion) now lives
+// in SQL — see supabase/migrations/..._aggregate_stats_views.sql. Doing it here
+// meant fetching every score row first, which PostgREST silently truncates at
+// max_rows = 1000; this file deliberately no longer knows how to bucket a
+// timestamp, so there is only one implementation of that rule.
 
-export const TIMEZONE = "Europe/Budapest";
 export const HOURS = [8, 10, 12, 14, 16, 18, 20] as const;
 export const DAYS = ["Hét", "Ked", "Sze", "Csüt", "Pén", "Szo", "Vas"] as const;
-
-const WEEKDAY_INDEX: Record<string, number> = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
-
-const partsFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: TIMEZONE,
-  hour: "numeric",
-  hour12: false,
-  weekday: "short",
-});
-
-export function localDayHour(isoTimestamp: string): { dayIndex: number; hour: number } {
-  const parts = partsFormatter.formatToParts(new Date(isoTimestamp));
-  let hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
-  if (hour === 24) hour = 0;
-  const weekday = parts.find((p) => p.type === "weekday")?.value ?? "Mon";
-  return { dayIndex: WEEKDAY_INDEX[weekday] ?? 0, hour };
-}
-
-// Snaps an actual hour (0-23) to the nearest entry in HOURS, so a 19:xx
-// submission lands in the same bucket as the 18:00 column.
-export function nearestHourBucket(hour: number): number {
-  let best: (typeof HOURS)[number] = HOURS[0];
-  let bestDiff = Infinity;
-  for (const h of HOURS) {
-    const diff = Math.min(Math.abs(hour - h), 24 - Math.abs(hour - h));
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      best = h;
-    }
-  }
-  return best;
-}
 
 export type HeatmapCell = { avg: number; count: number } | null;
 export type HeatmapGrid = HeatmapCell[][]; // [dayIndex][hourIndex]
 
-export function buildHeatmapGrid(
-  points: { createdAt: string; score: number }[],
-): HeatmapGrid {
-  const sums: number[][] = DAYS.map(() => HOURS.map(() => 0));
-  const counts: number[][] = DAYS.map(() => HOURS.map(() => 0));
+// One row of public.partner_heatmap_stats. day_index is 0-6 (Mon-Sun) and
+// hour_bucket is already snapped to one of HOURS by the database.
+export type HeatmapBucketRow = {
+  aspect_key: string;
+  day_index: number;
+  hour_bucket: number;
+  avg_score: number;
+  score_count: number;
+};
 
-  for (const point of points) {
-    const { dayIndex, hour } = localDayHour(point.createdAt);
-    const bucketedHour = nearestHourBucket(hour);
-    const hourIndex = HOURS.indexOf(bucketedHour as (typeof HOURS)[number]);
-    sums[dayIndex][hourIndex] += point.score;
-    counts[dayIndex][hourIndex] += 1;
+// Scatters pre-aggregated buckets into the fixed DAYS x HOURS matrix the
+// Heatmap component renders. Rows outside the grid (a day_index or hour_bucket
+// the view somehow produced that this build doesn't display) are skipped rather
+// than crashing on an out-of-range index.
+export function gridFromBuckets(rows: HeatmapBucketRow[]): HeatmapGrid {
+  const grid: HeatmapGrid = DAYS.map(() => HOURS.map(() => null));
+
+  for (const row of rows) {
+    const hourIndex = HOURS.indexOf(row.hour_bucket as (typeof HOURS)[number]);
+    if (hourIndex === -1) continue;
+    if (row.day_index < 0 || row.day_index >= DAYS.length) continue;
+    grid[row.day_index][hourIndex] = { avg: row.avg_score, count: Number(row.score_count) };
   }
 
-  return DAYS.map((_, di) =>
-    HOURS.map((_, hi) => (counts[di][hi] > 0 ? { avg: sums[di][hi] / counts[di][hi], count: counts[di][hi] } : null)),
+  return grid;
+}
+
+// Groups bucket rows by aspect and builds one grid per aspect key, so the
+// dashboard can hand the selected aspect's grid straight to <Heatmap>.
+export function gridsByAspect(aspectKeys: string[], rows: HeatmapBucketRow[]): Record<string, HeatmapGrid> {
+  return Object.fromEntries(
+    aspectKeys.map((key) => [key, gridFromBuckets(rows.filter((r) => r.aspect_key === key))]),
   );
 }
 
@@ -95,18 +80,23 @@ export type AspectAverage = {
   count: number;
 };
 
-export function computeAspectAverages(
+// Joins the question set's aspect definitions (which give order, label and
+// icon) to the per-aspect averages from public.partner_aspect_stats. Aspects
+// with no reviews yet stay in the list with avg = null, so the dashboard shows
+// them as "—" instead of dropping the tile.
+export function joinAspectAverages(
   aspects: { key: string; label: string; icon: string | null }[],
-  scores: { aspect_key: string; score: number }[],
+  stats: { aspect_key: string; avg_score: number; score_count: number }[],
 ): AspectAverage[] {
+  const byKey = new Map(stats.map((s) => [s.aspect_key, s]));
   return aspects.map((a) => {
-    const vals = scores.filter((s) => s.aspect_key === a.key).map((s) => s.score);
+    const stat = byKey.get(a.key);
     return {
       key: a.key,
       label: a.label,
       icon: a.icon,
-      avg: vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null,
-      count: vals.length,
+      avg: stat ? stat.avg_score : null,
+      count: stat ? Number(stat.score_count) : 0,
     };
   });
 }

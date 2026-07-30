@@ -4,27 +4,29 @@ import { VenueRankingTable, type VenueStat } from "./VenueRankingTable";
 type Partner = { id: string; name: string; question_set_id: string | null; alert_threshold: number };
 type Aspect = { key: string; label: string; question_set_id: string };
 
-function avg(vals: number[]) {
-  return vals.reduce((s, v) => s + v, 0) / vals.length;
-}
-
 export default async function AdminOverviewPage() {
   const supabase = await createClient();
 
-  // scores doesn't actually filter by submission id (it reads every row
-  // unconditionally below), so it has no real dependency on the other three
-  // — fetched in parallel with them instead of afterwards.
-  const [{ data: partners }, { data: submissions }, { data: aspects }, { data: scores }] = await Promise.all([
+  // This page used to select EVERY submissions and submission_scores row with
+  // no limit and no ORDER BY, then average them here. PostgREST caps responses
+  // at max_rows = 1000 without reporting it (supabase/config.toml), so at ~5
+  // scores per review that made every number on this page wrong — silently,
+  // and from a non-deterministic subset — from roughly 200 total reviews on.
+  // The aggregation now happens in SQL and returns one row per partner (plus
+  // one per partner/aspect pair), which cannot outgrow that ceiling.
+  const [{ data: partners }, { data: summaries }, { data: aspectStats }, { data: aspects }] = await Promise.all([
     supabase.from("partners").select("id, name, question_set_id, alert_threshold").order("name"),
-    supabase.from("submissions").select("id, partner_id, created_at, prize_id"),
+    supabase
+      .from("partner_summary_stats")
+      .select("partner_id, review_count, prize_count, reviews_24h, reviews_7d, avg_score"),
+    supabase.from("partner_aspect_stats").select("partner_id, aspect_key, avg_score, score_count"),
     supabase.from("question_aspects").select("key, label, question_set_id"),
-    supabase.from("submission_scores").select("submission_id, aspect_key, score"),
   ]);
 
   const safePartners = (partners ?? []) as Partner[];
-  const safeSubmissions = submissions ?? [];
+  const safeSummaries = summaries ?? [];
+  const safeAspectStats = aspectStats ?? [];
   const safeAspects = (aspects ?? []) as Aspect[];
-  const safeScores = scores ?? [];
 
   if (safePartners.length === 0) {
     return (
@@ -34,32 +36,43 @@ export default async function AdminOverviewPage() {
     );
   }
 
-  // Server Component: this genuinely runs fresh per request, so reading the
-  // actual current time here is correct, not a memoization hazard — the
-  // react-hooks/purity rule is written for client render purity and doesn't
-  // have a server-component-aware exception yet.
-  // eslint-disable-next-line react-hooks/purity
-  const now = Date.now();
-  const last24h = safeSubmissions.filter((s) => now - new Date(s.created_at).getTime() <= 86_400_000).length;
-  const last7d = safeSubmissions.filter((s) => now - new Date(s.created_at).getTime() <= 7 * 86_400_000).length;
-  const totalPrizeEntries = safeSubmissions.filter((s) => s.prize_id).length;
-  const responseRate = safeSubmissions.length ? Math.round((totalPrizeEntries / safeSubmissions.length) * 100) : 0;
+  // The 24h/7d windows are evaluated per partner inside partner_summary_stats
+  // (against the database clock, so they no longer depend on how far the
+  // serverless region's time has drifted); the totals are just their sums.
+  const summaryByPartner = new Map(safeSummaries.map((s) => [s.partner_id, s]));
+  const sum = (pick: (s: (typeof safeSummaries)[number]) => number) =>
+    safeSummaries.reduce((acc, s) => acc + Number(pick(s) ?? 0), 0);
+
+  const totalReviews = sum((s) => s.review_count);
+  const last24h = sum((s) => s.reviews_24h);
+  const last7d = sum((s) => s.reviews_7d);
+  const totalPrizeEntries = sum((s) => s.prize_count);
+  const responseRate = totalReviews ? Math.round((totalPrizeEntries / totalReviews) * 100) : 0;
 
   const venueStats = safePartners
     .map((partner) => {
-      const rows = safeSubmissions.filter((s) => s.partner_id === partner.id);
-      const rowIds = new Set(rows.map((r) => r.id));
-      const partnerScores = safeScores.filter((s) => rowIds.has(s.submission_id));
-      const avgScore = partnerScores.length ? avg(partnerScores.map((s) => s.score)) : null;
+      const summary = summaryByPartner.get(partner.id);
       const partnerAspects = safeAspects.filter((a) => a.question_set_id === partner.question_set_id);
+      const statsByKey = new Map(
+        safeAspectStats.filter((s) => s.partner_id === partner.id).map((s) => [s.aspect_key, s]),
+      );
+      // Only aspects belonging to this partner's own question set are eligible,
+      // so a venue that was moved between question sets isn't judged on a
+      // retired aspect it no longer asks about.
       const worstAspect = partnerAspects
         .map((a) => {
-          const vals = partnerScores.filter((s) => s.aspect_key === a.key).map((s) => s.score);
-          return vals.length ? { ...a, avg: avg(vals) } : null;
+          const stat = statsByKey.get(a.key);
+          return stat ? { ...a, avg: stat.avg_score } : null;
         })
         .filter((a): a is Aspect & { avg: number } => a !== null)
         .sort((a, b) => a.avg - b.avg)[0];
-      return { partner, reviewCount: rows.length, avgScore, prizeCount: rows.filter((r) => r.prize_id).length, worstAspect };
+      return {
+        partner,
+        reviewCount: Number(summary?.review_count ?? 0),
+        avgScore: summary?.avg_score ?? null,
+        prizeCount: Number(summary?.prize_count ?? 0),
+        worstAspect,
+      };
     })
     .sort((a, b) => (b.avgScore ?? 0) - (a.avgScore ?? 0));
 
