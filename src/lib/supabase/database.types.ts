@@ -108,6 +108,9 @@ export interface Database {
           // Nonce of the single-use token the submission was made with; a
           // unique index on it is what prevents replaying one token.
           request_nonce: string | null;
+          // Whether the winner's coupon email actually went out. NULL for
+          // non-winners; the Napló flags anything other than 'sent'.
+          winner_email_status: "sent" | "failed" | "not-configured" | "no-email" | null;
         };
         Insert: Partial<Database["public"]["Tables"]["submissions"]["Row"]> & { partner_id: string };
         Update: Partial<Database["public"]["Tables"]["submissions"]["Row"]>;
@@ -233,6 +236,7 @@ export interface Database {
           winner_id: string | null;
           scores: Record<string, number>;
           reasons: Record<string, string>;
+          winner_email_status: string | null;
         };
         Relationships: [];
       };

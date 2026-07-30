@@ -126,11 +126,15 @@ export async function drawWinnerForPartner(
 
   if (updateError || !updated) return { ok: false, error: "winner-flag-failed" };
 
+  // Best-effort: a failed email does not undo the draw. But the outcome is
+  // RECORDED, because an invisible failure means the guest never hears they
+  // won and nobody finds out — the Napló flags it so the code can be handed
+  // over at the counter instead.
+  let emailStatus: "sent" | "failed" | "not-configured" | "no-email" = "no-email";
+
   if (updated.email) {
     const { data: partner } = await supabase.from("partners").select("name").eq("id", partnerId).maybeSingle();
-    // Best-effort: a failed email does not undo the draw. The winner_id is
-    // already recorded and the admin can always read the code out of the Napló.
-    await sendEmail({
+    emailStatus = await sendEmail({
       to: updated.email,
       subject: "Gratulálunk, nyertél! 🎉",
       html: `
@@ -141,6 +145,8 @@ export async function drawWinnerForPartner(
       `,
     });
   }
+
+  await supabase.from("submissions").update({ winner_email_status: emailStatus }).eq("id", chosen.id);
 
   return {
     ok: true,

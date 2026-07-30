@@ -61,6 +61,10 @@ export const adminHelpFaqs: HelpFaq[] = [
     a: "Alapesetben sehogy: a sorsolás minden éjjel automatikusan lefut minden partnernél az előző napra, és a nyertes e-mailben megkapja a kupon-kódot. Az előző napra sorsolunk, nem az aktuálisra, hogy az este későn értékelők se maradjanak ki. Ha valamiért kézzel akarod lezárni a mai napot, a Napló fülön válaszd ki az egységet a szűrőben, és használd a \"Mai nyertes sorsolása\" gombot — egy napra egy egység csak egyszer sorsolható, tehát ez nem tud dupla kupont kiadni.",
   },
   {
+    q: "Mit jelent a Naplóban a piros \"e-mail nem ment ki\" jelzés?",
+    a: "Azt, hogy a vendéget kisorsoltuk, de az értesítő levél nem jutott el hozzá — tehát ő nem tudja, hogy nyert. Ilyenkor neked kell átadnod a kupon-kódot, ami ott áll mellette a sorban. A leggyakoribb ok, hogy még nincs verifikált küldő-domain a Resendben: a teszt-feladó csak a saját fiókod címére tud kézbesíteni, minden más címet elutasít. Ha ez a jelzés rendszeresen megjelenik, a Resendben verifikálj egy domaint, és állítsd át rá az EMAIL_FROM változót.",
+  },
+  {
     q: "Hogyan szerkesztem a nyilvános landing oldal szövegét?",
     a: "A Beállítások → Tartalom szerkesztése fülön — a mentés után azonnal megjelenik a látogatóknak.",
   },

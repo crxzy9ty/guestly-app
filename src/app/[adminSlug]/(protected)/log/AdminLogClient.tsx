@@ -14,9 +14,35 @@ export type AdminLogRow = {
   email: string | null;
   prizeId: string | null;
   winnerId: string | null;
+  winnerEmailStatus: string | null;
   scores: Record<string, number>;
   reasons: Record<string, string>;
 };
+
+// A winner whose email never arrived is the one case here that needs a human:
+// the guest does not know they won, so the code has to be handed over at the
+// counter. Anything other than a clean "sent" says so.
+function WinnerBadge({ winnerEmailStatus }: { winnerEmailStatus: string | null }) {
+  if (winnerEmailStatus === "failed" || winnerEmailStatus === "not-configured") {
+    return (
+      <span
+        title={
+          winnerEmailStatus === "not-configured"
+            ? "Nincs beállítva e-mail-küldés (RESEND_API_KEY hiányzik) — a kódot kézzel kell átadni."
+            : "Az értesítő e-mail nem ment ki. A vendég nem tudja, hogy nyert — add át neki a kódot a pultnál."
+        }
+        className="ml-1.5 whitespace-nowrap rounded-full bg-[#FBE0DC] px-1.5 py-0.5 text-[10px] font-bold text-[#A32C15]"
+      >
+        ⚠ e-mail nem ment ki
+      </span>
+    );
+  }
+  return (
+    <span className="ml-1.5 rounded-full bg-[#E8F5EE] px-1.5 py-0.5 text-[10px] font-bold text-green">
+      🎉 nyertes
+    </span>
+  );
+}
 
 type Aspect = { key: string; label: string };
 
@@ -207,11 +233,7 @@ export function AdminLogClient({
                   <td className="whitespace-nowrap px-3 py-2 font-mono font-bold text-violet">{formatSubmissionId(r.id)}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-ink">
                     {r.prizeId ?? "—"}
-                    {r.winnerId && (
-                      <span className="ml-1.5 rounded-full bg-[#E8F5EE] px-1.5 py-0.5 text-[10px] font-bold text-green">
-                        🎉 nyertes
-                      </span>
-                    )}
+                    {r.winnerId && <WinnerBadge winnerEmailStatus={r.winnerEmailStatus} />}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-ink">{r.email ?? "—"}</td>
                   {!selectedPartnerId && <td className="whitespace-nowrap px-3 py-2 text-ink">{r.venue}</td>}

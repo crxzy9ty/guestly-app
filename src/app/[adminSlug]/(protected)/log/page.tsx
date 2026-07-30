@@ -29,7 +29,7 @@ export default async function AdminLogPage({
   // silently truncate. See supabase/migrations/..._aggregate_stats_views.sql.
   let query = supabase
     .from("submission_log_view")
-    .select("id, partner_id, created_at, email, prize_id, winner_id, scores, reasons")
+    .select("id, partner_id, created_at, email, prize_id, winner_id, winner_email_status, scores, reasons")
     .order("created_at", { ascending: false })
     .limit(300);
   if (selectedPartner) query = query.eq("partner_id", selectedPartner.id);
@@ -53,6 +53,7 @@ export default async function AdminLogPage({
     email: s.email,
     prizeId: s.prize_id,
     winnerId: s.winner_id,
+    winnerEmailStatus: s.winner_email_status,
     scores: s.scores ?? {},
     reasons: s.reasons ?? {},
   }));

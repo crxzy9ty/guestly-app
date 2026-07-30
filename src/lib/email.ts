@@ -26,21 +26,30 @@ function getClient() {
   return new Resend(apiKey);
 }
 
-// Never throws — email delivery is a best-effort side effect, not something
-// that should fail the winner draw or the demo-request submission it's
-// attached to. Returns whether it actually attempted a send (false when
-// RESEND_API_KEY isn't configured yet, e.g. in local dev before setup).
-export async function sendEmail(input: { to: string; subject: string; html: string }): Promise<boolean> {
+// Distinguishes the two ways a send can not happen, because they need
+// different responses: "not-configured" is a deployment the operator has to
+// fix, while "failed" is usually the recipient or the sending domain. Callers
+// that record the outcome (the prize draw) can then say which it was.
+//
+// A common cause of "failed" worth knowing about: while EMAIL_FROM is still
+// Resend's shared onboarding@resend.dev sender, Resend only delivers to the
+// account owner's own address. Every other recipient is rejected — silently,
+// from the guest's point of view — until a real domain is verified.
+export type EmailOutcome = "sent" | "failed" | "not-configured";
+
+// Never throws: delivery is a best-effort side effect and must not undo the
+// draw or the demo request it is attached to.
+export async function sendEmail(input: { to: string; subject: string; html: string }): Promise<EmailOutcome> {
   const client = getClient();
   if (!client) {
     console.warn(`[email] RESEND_API_KEY not set — skipped sending "${input.subject}" to ${input.to}`);
-    return false;
+    return "not-configured";
   }
 
   const { error } = await client.emails.send({ from: FROM, to: input.to, subject: input.subject, html: input.html });
   if (error) {
-    console.error("[email] send failed:", error);
-    return false;
+    console.error(`[email] send failed (from=${FROM}, to=${input.to}):`, error);
+    return "failed";
   }
-  return true;
+  return "sent";
 }
