@@ -1,6 +1,13 @@
-// Shared with src/lib/dashboard/heatmap.ts (TIMEZONE constant there is
-// duplicated intentionally — that file predates this one and changing its
-// import would be an unrelated diff; both must stay "Europe/Budapest").
+// The single definition of the app's operating timezone. Everything that
+// buckets or formats a timestamp must agree on it: the heatmap grid, the Napló
+// timestamps and the daily prize draw all derive "which day/hour is this" from
+// here, and any disagreement shows up as reviews landing in the wrong cell or
+// a draw covering the wrong day.
+//
+// Note that SQL has its own copy of this string, in the aggregate functions
+// added by supabase/migrations/..._partner_stats_date_range.sql. That one is
+// unavoidable — Postgres cannot import a TypeScript constant — so if this ever
+// changes, those functions must change with it.
 export const TIMEZONE = "Europe/Budapest";
 
 const dateFormatter = new Intl.DateTimeFormat("en-CA", {

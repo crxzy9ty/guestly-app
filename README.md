@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Guestly
 
-## Getting Started
+QR-kód alapú vendégelégedettség-mérés vendéglátóhelyeknek. A vendég az asztalon
+lévő kódot beolvasva 30 másodperc alatt értékel öt szempontot; a tulajdonos
+óránkénti bontásban látja, mikor és hol csúszik el a kiszolgálás.
 
-First, run the development server:
+**Next.js 16 + Supabase + Vercel.** Éles: https://guestly-app-gamma.vercel.app
+
+> ⚠️ Ez a Next.js verzió eltér a megszokottól — a `middleware.ts` konvenció
+> neve `proxy.ts`, és az exportált függvény `proxy`, nem `middleware`. Kód
+> írása előtt olvasd el a vonatkozó leírást a `node_modules/next/dist/docs/`
+> alatt (lásd `AGENTS.md`).
+
+## Indulás
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # töltsd ki a valódi értékekkel
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Minden környezeti változó szerepe a `.env.example`-ben van dokumentálva. A
+`SUPABASE_SECRET_KEY` és az `ADMIN_ROUTE_SECRET` nélkül az admin felület és a
+vendég-beküldés nem működik.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Felületek
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Útvonal | Ki éri el | Mit lát |
+|---|---|---|
+| `/` | bárki | marketing oldal (a szövege az adatbázisból jön, adminból szerkeszthető) |
+| `/demo` | bárki | demó-kérés űrlap |
+| `/ertekeles/<partnerId>` | vendég, QR-ból | az értékelő folyamat |
+| `/login` → `/dashboard` | partner (`role = 'owner'`) | csak a saját egysége, vendég-e-mail nélkül |
+| `/<ADMIN_ROUTE_SECRET>/…` | Guestly csapat (`role = 'admin'`) | minden partner, e-mail címekkel és sorsolással |
 
-## Learn More
+Az admin felület egy **titkos, sehonnan nem linkelt URL-en** van: ha a szegmens
+nem egyezik az `ADMIN_ROUTE_SECRET`-tel, valódi 404 jön (nem átirányítás — az
+elárulná, hogy az útvonal létezik). Ez önmagában nem védelem, csak zajcsökkentés;
+a valódi kaput a `role = 'admin'` ellenőrzés jelenti a védett layoutban.
 
-To learn more about Next.js, take a look at the following resources:
+## Adatbázis
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+A séma a `supabase/migrations/` alatt van, időrendben. **Nincs automatizált
+telepítés**: a migrációkat kézzel kell bemásolni a
+[Supabase SQL Editorba](https://supabase.com/dashboard/project/cjulxrpikzznfixguejb/sql/new)
+és lefuttatni. A CLI-s út (`supabase link` + `supabase db push`) járható lenne,
+de a projekt jelenleg nincs linkelve.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**A migrációk sorrendje számít, és a kód gyakran feltételezi a legfrissebbet** —
+deploy előtt futtasd le az újakat, különben a Vercel a hiányzó függvényekre
+fut hibára.
 
-## Deploy on Vercel
+### Amit tudni érdemes a jogosultságokról
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Minden táblán van RLS, és minden szerepkörnek explicit `revoke`/`grant`.
+- **Az `anon` nem tud beszúrni sehova.** A vendég-értékelés egyetlen útja a
+  `submit_guest_review()` függvény, amit csak a `service_role` hívhat — a
+  szerver pedig egy aláírt, egyszer használatos tokent ellenőriz előtte
+  (`src/lib/review-token.ts`).
+- A partner (`owner`) **soha nem látja** a vendégek e-mail címét és sorsolási
+  azonosítóját: nincs `select` policy-je a `submissions` táblán, csak maszkolt
+  nézeteken keresztül ér el adatot.
+- A dashboard-statisztikák SQL-ben aggregálódnak. Ez nem teljesítmény-kérdés:
+  a PostgREST 1000 sornál **némán** vág, így a JS-oldali összegzés egy idő után
+  csendben hibás számokat adott volna.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Napi sorsolás
+
+Minden éjjel 02:00 UTC-kor fut (`vercel.json`), és **az előző, már lezárt
+budapesti napra** sorsol minden partnernél. Azért az előzőre, mert a Vercel
+UTC-ben ütemez, a jogosultság viszont budapesti naptári nap — nyáron és télen
+más dátumra esne ugyanaz az esti időpont, ráadásul a késő este értékelők
+kimaradnának.
+
+A végpont `CRON_SECRET`-tel védett, és **hiányzó titok esetén nem fut le**,
+ahelyett hogy védtelenül futna.
+
+## Parancsok
+
+```bash
+npm run dev      # fejlesztői szerver
+npm run build    # production build (deploy előtt mindig)
+npm run lint
+npm run invite   # egyszeri meghívó szkript; a felületen is megy: Partnerek → Meghívás
+npx tsc --noEmit # típusellenőrzés
+```
+
+## Dokumentáció
+
+- `reference/audit-2026-07-30.md` — kódaudit, a talált hibák és a státuszuk
+- `reference/guestly-attekintes.md` — termék- és üzleti döntések háttere
+- `AGENTS.md` / `CLAUDE.md` — utasítások AI-asszisztensnek

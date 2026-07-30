@@ -4,6 +4,31 @@ Ez a fájl összefoglalja az eddig elkészült terveket, hogy ne kelljen visszag
 
 ---
 
+> ## ⚠️ Olvasási útmutató (2026-07-30)
+>
+> **Ez a dokumentum a tervezési fázisban készült, és a technikai állításai
+> elavultak.** Ahol azt írja, hogy „a bejelentkezés és az adatok demó-szinten
+> működnek", „nincs valódi felhasználó-adatbázis", vagy hogy a Next.js/Supabase
+> átállás egy jövőbeli lépés — az azóta **elkészült és élesben fut**.
+>
+> Az akkori élesítés előtti checklistből teljesült: valódi adattárolás,
+> QR-generálás, duplikáció-védelem, e-mail-küldés, jelszó-visszaállítás,
+> GDPR-tájékoztató és hozzájárulás, állítható riasztási küszöb, `/admin` route
+> szerveroldali jogosultsággal, onboarding-form, súgó a felületen. Ezen felül
+> elkészült még: időszak-szűrő a statisztikákra, automatikus napi sorsolás,
+> előfizetés-kezelés, admin partner-adatlap.
+>
+> **Onnan nyitva maradt:** valós eszközös tesztelés (régebbi Android, kis
+> kijelző), „első értékelés" ünneplő értesítés, és az opcionális hűségprogram.
+>
+> **A rendszer aktuális technikai állapotát a `README.md` írja le**, a kód
+> minőségi állapotát pedig a `reference/audit-2026-07-30.md`.
+>
+> Az **üzleti** részek (árazás, előfizetési struktúra, próbaidő, partnerszerzés,
+> ingyenes vs. fizetős) továbbra is érvényesek — azokat nem érintette fejlesztés.
+
+---
+
 ## 1. Termék-prototípus (vendég + tulajdonos folyamat)
 **Fájl:** `guestly.jsx`
 
