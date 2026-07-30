@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { signOutOwner } from "@/app/actions/auth";
 import { VenueSwitcher } from "./VenueSwitcher";
@@ -16,10 +17,19 @@ export default async function DashboardPage({
   const supabase = await createClient();
   const user = await getCachedUser();
 
+  // layout.tsx runs the same check, but Next.js renders layouts and pages
+  // CONCURRENTLY — its redirect() does not prevent this page's body from
+  // executing. A session that expires mid-navigation therefore reached
+  // `user!.id` here and crashed the route in production (TypeError: Cannot
+  // read properties of null). The guard has to be repeated, not asserted away.
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: memberships } = await supabase
     .from("partner_members")
     .select("partners(id, name, question_set_id, alert_threshold)")
-    .eq("user_id", user!.id);
+    .eq("user_id", user.id);
 
   const partners = (memberships ?? [])
     .map((m) => m.partners as unknown as PartnerRow | null)

@@ -135,10 +135,18 @@ export async function updatePassword(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // updateUser() above succeeding implies a session, but a token that expires
+  // in between still returns null here — and a non-null assertion would turn
+  // that into an unhandled TypeError instead of a recoverable error message.
+  if (!user) {
+    return { error: "A munkamenet lejárt. Kérj egy új linket." };
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .single();
 
   revalidatePath("/", "layout");
