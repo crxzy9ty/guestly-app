@@ -53,6 +53,72 @@ export async function createQuestionSet(adminSlug: string, name: string) {
   return newSet?.id as string | undefined;
 }
 
+export async function renameQuestionSet(adminSlug: string, questionSetId: string, name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return { error: "A csoport neve nem lehet üres." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("question_sets").update({ name: trimmed }).eq("id", questionSetId);
+  if (error) return { error: "Nem sikerült átnevezni a csoportot." };
+
+  revalidateSettings(adminSlug);
+  return { error: null };
+}
+
+// Moves one aspect up or down within its set. Guests see the questions in this
+// order, so being unable to change it meant a question added later was stuck at
+// the end permanently — the only fix was editing the database by hand.
+//
+// Renumbers the WHOLE set to 0..n-1 rather than swapping two values. Swapping
+// is fewer writes but far harder to reason about here, because existing
+// sort_order values are not guaranteed to be unique or gapless: addAspect
+// derives them from a COUNT, so deleting an aspect and adding another produces
+// duplicates. Renumbering makes the stored order match the displayed order
+// exactly, and repairs any such damage as a side effect. A question set holds a
+// handful of rows, so the extra writes cost nothing.
+export async function moveAspect(adminSlug: string, aspectId: string, direction: "up" | "down") {
+  const supabase = await createClient();
+
+  const { data: aspect } = await supabase
+    .from("question_aspects")
+    .select("question_set_id")
+    .eq("id", aspectId)
+    .maybeSingle();
+
+  if (!aspect) return { error: "A kérdés nem található." };
+
+  // (sort_order, id) is the same ordering the guest flow and this manager read
+  // with, so duplicates still resolve to one stable, predictable sequence.
+  const { data: siblings } = await supabase
+    .from("question_aspects")
+    .select("id")
+    .eq("question_set_id", aspect.question_set_id)
+    .order("sort_order")
+    .order("id");
+
+  const ordered = (siblings ?? []).map((s) => s.id);
+  const index = ordered.indexOf(aspectId);
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+  // Already at the end: nothing to do, and not an error worth showing.
+  if (index === -1 || targetIndex < 0 || targetIndex >= ordered.length) {
+    return { error: null };
+  }
+
+  [ordered[index], ordered[targetIndex]] = [ordered[targetIndex], ordered[index]];
+
+  const results = await Promise.all(
+    ordered.map((id, position) =>
+      supabase.from("question_aspects").update({ sort_order: position }).eq("id", id),
+    ),
+  );
+
+  if (results.some((r) => r.error)) return { error: "Nem sikerült átrendezni a kérdéseket." };
+
+  revalidateSettings(adminSlug);
+  return { error: null };
+}
+
 export async function duplicateQuestionSet(adminSlug: string, sourceId: string, newName: string) {
   const supabase = await createClient();
   const { data: sourceAspects } = await supabase

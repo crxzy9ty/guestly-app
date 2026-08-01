@@ -44,7 +44,7 @@ export default async function AdminLogPage({
   // other — fetched in parallel to save a round trip.
   const [{ data: submissions }, { data: aspects }] = await Promise.all([
     query,
-    supabase.from("question_aspects").select("key, label").eq("question_set_id", questionSetId).order("sort_order"),
+    supabase.from("question_aspects").select("key, label").eq("question_set_id", questionSetId).order("sort_order").order("id"),
   ]);
   const rows: AdminLogRow[] = (submissions ?? []).map((s) => ({
     id: s.id,

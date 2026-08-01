@@ -45,7 +45,7 @@ export default async function AdminVenueDetailPage({
         .from("question_aspects")
         .select("key, label, icon")
         .eq("question_set_id", partner.question_set_id ?? "")
-        .order("sort_order"),
+        .order("sort_order").order("id"),
       supabase
         .rpc("partner_summary_range", { target_partner_id: partner.id, since_days: sinceDays })
         .maybeSingle(),

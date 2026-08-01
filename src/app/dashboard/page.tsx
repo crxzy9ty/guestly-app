@@ -67,7 +67,7 @@ export default async function DashboardPage({
         .from("question_aspects")
         .select("key, label, icon")
         .eq("question_set_id", selected.question_set_id ?? "")
-        .order("sort_order"),
+        .order("sort_order").order("id"),
       // The *_range RPCs aggregate within the selected window in SQL. Filtering
       // client-side instead would mean fetching every score row first — the
       // exact thing ..._aggregate_stats_views.sql was written to stop.

@@ -18,7 +18,7 @@ export default async function AdminSettingsPage({
         .select("id, name, email, business, message, status, created_at")
         .order("created_at", { ascending: false }),
       supabase.from("question_sets").select("id, name").order("name"),
-      supabase.from("question_aspects").select("id, question_set_id, key, label, icon").order("sort_order"),
+      supabase.from("question_aspects").select("id, question_set_id, key, label, icon").order("sort_order").order("id"),
       supabase.from("partners").select("id, name, question_set_id").order("name"),
     ]);
 

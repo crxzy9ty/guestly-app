@@ -6,9 +6,11 @@ import {
   createQuestionSet,
   duplicateQuestionSet,
   deleteQuestionSet,
+  renameQuestionSet,
   addAspect,
   updateAspect,
   deleteAspect,
+  moveAspect,
 } from "@/app/actions/question-sets";
 
 export type QuestionSet = { id: string; name: string };
@@ -34,6 +36,13 @@ export function QuestionSetsManager({
   const [newIcon, setNewIcon] = useState("✦");
   const [confirmRemoveAspect, setConfirmRemoveAspect] = useState<string | null>(null);
   const [confirmRemoveSet, setConfirmRemoveSet] = useState<string | null>(null);
+  const [renamingSet, setRenamingSet] = useState(false);
+  const [draftSetName, setDraftSetName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  // Disables both arrows on every row while a move is in flight. Two overlapping
+  // renumbers would interleave their writes and land the list in an order
+  // neither click asked for.
+  const [isReordering, setIsReordering] = useState(false);
 
   const activeSet = questionSets.find((s) => s.id === activeSetId) ?? questionSets[0];
   const activeAspects = aspects.filter((a) => a.question_set_id === activeSet?.id);
@@ -90,9 +99,52 @@ export function QuestionSetsManager({
 
       {activeSet && (
         <>
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-sm font-bold text-ink">{activeSet.name}</div>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            {renamingSet ? (
+              <div className="flex flex-1 flex-wrap items-center gap-2">
+                <input
+                  autoFocus
+                  value={draftSetName}
+                  onChange={(e) => setDraftSetName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setRenamingSet(false);
+                  }}
+                  className={`${inputClass} min-w-[180px] flex-1`}
+                />
+                <button
+                  disabled={!draftSetName.trim()}
+                  onClick={async () => {
+                    const res = await renameQuestionSet(adminSlug, activeSet.id, draftSetName);
+                    setError(res.error);
+                    if (!res.error) setRenamingSet(false);
+                  }}
+                  className="h-10 rounded-lg bg-ink px-4 text-xs font-bold text-white disabled:opacity-40"
+                >
+                  Mentés
+                </button>
+                <button
+                  onClick={() => setRenamingSet(false)}
+                  className="h-10 rounded-lg border border-line px-4 text-xs font-bold text-ink"
+                >
+                  Mégsem
+                </button>
+              </div>
+            ) : (
+              <div className="text-sm font-bold text-ink">{activeSet.name}</div>
+            )}
             <div className="flex gap-3">
+              {!renamingSet && (
+                <button
+                  onClick={() => {
+                    setDraftSetName(activeSet.name);
+                    setError(null);
+                    setRenamingSet(true);
+                  }}
+                  className="text-xs font-bold text-violet"
+                >
+                  Átnevezés
+                </button>
+              )}
               <button
                 onClick={() => duplicateQuestionSet(adminSlug, activeSet.id, `${activeSet.name} (másolat)`)}
                 className="text-xs font-bold text-violet"
@@ -127,8 +179,12 @@ export function QuestionSetsManager({
             </div>
           </div>
 
+          <p className="mb-2.5 text-[11.5px] leading-relaxed text-slate">
+            A vendég ebben a sorrendben kapja a kérdéseket. A nyilakkal átrendezheted.
+          </p>
+
           <div className="mb-5 grid gap-2.5">
-            {activeAspects.map((a) => (
+            {activeAspects.map((a, i) => (
               <div key={a.id} className="rounded-xl border border-line bg-paper p-3.5">
                 {editingAspectId === a.id ? (
                   <div className="flex flex-wrap items-center gap-2">
@@ -150,9 +206,44 @@ export function QuestionSetsManager({
                 ) : (
                   <div className="flex items-center justify-between gap-2.5">
                     <div className="flex items-center gap-2.5">
+                      {/* Arrows sit left of the question so the whole column
+                          reads as the running order, and the first/last are
+                          disabled rather than hidden — a button that vanishes
+                          shifts everything below it as you move through. */}
+                      <div className="flex shrink-0 flex-col gap-0.5">
+                        <button
+                          disabled={i === 0 || isReordering}
+                          title="Feljebb"
+                          onClick={async () => {
+                            setIsReordering(true);
+                            const res = await moveAspect(adminSlug, a.id, "up");
+                            setError(res.error);
+                            setIsReordering(false);
+                          }}
+                          className="h-5 w-5 rounded border border-line text-[10px] leading-none text-ink disabled:opacity-25"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          disabled={i === activeAspects.length - 1 || isReordering}
+                          title="Lejjebb"
+                          onClick={async () => {
+                            setIsReordering(true);
+                            const res = await moveAspect(adminSlug, a.id, "down");
+                            setError(res.error);
+                            setIsReordering(false);
+                          }}
+                          className="h-5 w-5 rounded border border-line text-[10px] leading-none text-ink disabled:opacity-25"
+                        >
+                          ▼
+                        </button>
+                      </div>
                       <span className="text-lg">{a.icon}</span>
                       <div>
-                        <div className="text-sm font-bold text-ink">{a.label}</div>
+                        <div className="text-sm font-bold text-ink">
+                          <span className="mr-1.5 text-[11px] font-normal text-slate">{i + 1}.</span>
+                          {a.label}
+                        </div>
                         <div className="font-mono text-[10.5px] text-slate">{a.key}</div>
                       </div>
                     </div>
@@ -197,6 +288,8 @@ export function QuestionSetsManager({
               </div>
             )}
           </div>
+
+          {error && <p className="mb-4 text-sm font-medium text-magenta">{error}</p>}
 
           <div className="rounded-xl border border-line bg-paper p-4">
             <div className="mb-3 text-sm font-bold text-ink">Kérdés hozzáadása ehhez a csoporthoz</div>

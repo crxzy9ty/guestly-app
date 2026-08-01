@@ -36,7 +36,7 @@ export default async function GuestReviewPage({
     .from("question_aspects")
     .select("key, label, icon")
     .eq("question_set_id", partner.question_set_id ?? "")
-    .order("sort_order");
+    .order("sort_order").order("id");
 
   if (!aspects || aspects.length === 0) {
     return (
