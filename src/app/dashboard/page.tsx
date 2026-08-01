@@ -34,10 +34,21 @@ export default async function DashboardPage({
     redirect("/login");
   }
 
-  const { data: memberships } = await supabase
-    .from("partner_members")
-    .select("partners(id, name, question_set_id, alert_threshold)")
-    .eq("user_id", user.id);
+  // Records that this partner looked at their dashboard, for the admin
+  // Partners tab. Self-throttling in SQL (a no-op within 15 minutes), so
+  // refreshing doesn't cost a write.
+  //
+  // Awaited rather than fired and forgotten: an un-awaited promise can be cut
+  // off when the serverless response is sent, which would drop the write
+  // sometimes and make "last seen" quietly unreliable. Run alongside the
+  // membership query so it costs no extra latency.
+  const [{ data: memberships }] = await Promise.all([
+    supabase
+      .from("partner_members")
+      .select("partners(id, name, question_set_id, alert_threshold)")
+      .eq("user_id", user.id),
+    supabase.rpc("touch_last_seen"),
+  ]);
 
   const partners = (memberships ?? [])
     .map((m) => m.partners as unknown as PartnerRow | null)

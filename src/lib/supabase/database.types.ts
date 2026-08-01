@@ -19,6 +19,9 @@ export interface Database {
           role: AppRole;
           email: string | null;
           full_name: string | null;
+          // Updated only by the touch_last_seen() function — owners have no
+          // UPDATE grant on this table, since `role` lives here too.
+          last_seen_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -225,6 +228,18 @@ export interface Database {
         };
         Relationships: [];
       };
+      // Admin-only engagement per partner: when their owner last opened the
+      // dashboard, and when a guest last submitted. Two signals because they
+      // fail in opposite directions.
+      partner_activity: {
+        Row: {
+          partner_id: string;
+          last_owner_seen_at: string | null;
+          last_review_at: string | null;
+          owner_count: number;
+        };
+        Relationships: [];
+      };
       submission_log_view: {
         Row: {
           id: string;
@@ -253,6 +268,13 @@ export interface Database {
       guestly_hour_bucket: {
         Args: { h: number };
         Returns: number;
+      };
+      // Stamps the CALLER's own profiles.last_seen_at, throttled to once per
+      // 15 minutes in SQL. security definer rather than a self-update policy,
+      // because such a policy would also let an owner edit their own `role`.
+      touch_last_seen: {
+        Args: Record<string, never>;
+        Returns: void;
       };
       // Date-windowed variants of the aggregate views, added by
       // ..._partner_stats_date_range.sql. since_days null = all time. They are

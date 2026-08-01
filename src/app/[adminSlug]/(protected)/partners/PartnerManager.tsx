@@ -7,6 +7,7 @@ import { QRModal } from "./QRModal";
 import { InviteOwnerModal } from "./InviteOwnerModal";
 import { downloadCsv } from "@/lib/csv";
 import { getSubscriptionStatus, subscriptionSortKey } from "@/lib/subscription";
+import { formatRelative, staleness, stalenessColor, exactTooltip } from "@/lib/relative-time";
 
 export type Partner = {
   id: string;
@@ -19,7 +20,28 @@ export type Partner = {
   alert_threshold: number;
   subscription_start: string | null;
   subscription_end: string | null;
+  // Engagement, from public.partner_activity. Read-only here.
+  lastOwnerSeenAt: string | null;
+  lastReviewAt: string | null;
+  ownerCount: number;
 };
+
+// Two separate signals rather than one "activity" number, because they fail in
+// opposite directions: logins with no reviews points at the QR code, reviews
+// with no logins points at a partner who isn't getting value and will churn.
+function ActivityCell({ iso, kind, extra }: { iso: string | null; kind: "login" | "review"; extra?: string }) {
+  const state = staleness(iso, kind);
+  const color = stalenessColor(state);
+  return (
+    <span
+      title={`${exactTooltip(iso)}${extra ? ` · ${extra}` : ""}`}
+      className="inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-bold"
+      style={{ background: color.bg, color: color.fg }}
+    >
+      {formatRelative(iso)}
+    </span>
+  );
+}
 
 const inputClass = "h-10 w-full rounded-lg border border-line bg-paper px-3 text-sm text-ink outline-none";
 const labelClass = "mb-1 block text-xs font-bold text-ink";
@@ -174,6 +196,9 @@ export function PartnerManager({
         "elofizetes_kezdete",
         "elofizetes_vege",
         "elofizetes_allapota",
+        "utolso_belepes",
+        "utolso_ertekeles",
+        "fiokok_szama",
       ],
       filtered.map((p) => [
         p.name,
@@ -186,6 +211,11 @@ export function PartnerManager({
         p.subscription_start,
         p.subscription_end,
         getSubscriptionStatus(p.subscription_start, p.subscription_end).label,
+        // Exact timestamps in the export, not "3 napja": a CSV gets sorted and
+        // filtered in a spreadsheet, where a relative phrase is useless.
+        p.lastOwnerSeenAt ? exactTooltip(p.lastOwnerSeenAt) : "",
+        p.lastReviewAt ? exactTooltip(p.lastReviewAt) : "",
+        p.ownerCount,
       ]),
     );
   };
@@ -287,11 +317,17 @@ export function PartnerManager({
       )}
 
       <div className="max-h-[65vh] overflow-auto rounded-xl border border-line bg-paper">
-        <table className="w-full min-w-[720px] border-collapse text-xs">
+        <table className="w-full min-w-[900px] border-collapse text-xs">
           <thead>
             <tr className="sticky top-0 z-10 bg-mist text-left">
               <th className="px-3 py-2 font-bold text-slate">Név</th>
               <th className="px-3 py-2 font-bold text-slate">Előfizetés</th>
+              <th className="whitespace-nowrap px-3 py-2 font-bold text-slate" title="Mikor nyitotta meg a partner utoljára a saját felületét">
+                Utolsó belépés
+              </th>
+              <th className="whitespace-nowrap px-3 py-2 font-bold text-slate" title="Mikor érkezett utoljára vendégértékelés ehhez az egységhez">
+                Utolsó értékelés
+              </th>
               <th className="px-3 py-2 font-bold text-slate">Cím</th>
               <th className="px-3 py-2 font-bold text-slate">Kapcsolattartó</th>
               <th className="px-3 py-2 text-center font-bold text-slate">Riasztási küszöb</th>
@@ -310,6 +346,20 @@ export function PartnerManager({
                   <td className="px-3 py-2 font-bold text-ink">{p.name}</td>
                   <td className="px-3 py-2">
                     <SubscriptionPill partner={p} />
+                  </td>
+                  <td className="px-3 py-2">
+                    <ActivityCell
+                      iso={p.lastOwnerSeenAt}
+                      kind="login"
+                      extra={
+                        p.ownerCount === 0
+                          ? "Nincs még fiók ehhez az egységhez"
+                          : `${p.ownerCount} fiók`
+                      }
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <ActivityCell iso={p.lastReviewAt} kind="review" />
                   </td>
                   <td className="max-w-[220px] px-3 py-2 text-slate">{p.address ?? "—"}</td>
                   <td className="px-3 py-2 text-slate">{p.contact_name ?? "—"}</td>
@@ -372,7 +422,7 @@ export function PartnerManager({
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-6 text-center text-slate">
+                <td colSpan={8} className="px-3 py-6 text-center text-slate">
                   {partners.length === 0 ? "Nincs még felvett egység." : "Nincs a keresésnek megfelelő egység."}
                 </td>
               </tr>
