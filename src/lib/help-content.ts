@@ -49,6 +49,10 @@ export const adminHelpFaqs: HelpFaq[] = [
     a: "A Partnerek táblázatban minden sornál található egy \"QR-kód\" gomb — ez megnyit egy előnézetet, amit letölthetsz és kinyomtathatsz kihelyezésre.",
   },
   {
+    q: "Mit jelent a \"Szokatlan forgalom\" sárga jelzés?",
+    a: "Azt, hogy az adott egységnél az elmúlt 24 óra értékelésszáma jóval kilóg a saját szokásos napi forgalmából (legalább 20 értékelés, és legalább a szokásos háromszorosa). Nem hiba és nem vád: lehet kampány, rendezvény vagy egyszerűen egy jó nap. Azért van, hogy egyáltalán észrevedd — a rendszer nem tudja teljesen megakadályozni, hogy valaki szkripttel hamis értékeléseket küldjön be, csak megnehezíti. Kattints a jelzésre, és nézd meg a Naplóban: sok, percek alatt érkezett, hasonló mintázatú értékelés gyanús. Új partnereknél nem jelez, amíg nincs elég előzményük az összehasonlításhoz.",
+  },
+  {
     q: "Hogyan állítom be, mikor jelezzen riasztást a rendszer?",
     a: "A Partnerek fülön, egy egység szerkesztésekor a \"Riasztási küszöb\" mezőben partnerenként külön beállítható — ez alapból 6.5, de igazíthatod az adott hely elvárásaihoz.",
   },

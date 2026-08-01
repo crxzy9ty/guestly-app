@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { detectVolumeAnomaly, describeAnomaly } from "@/lib/anomaly";
 import { VenueRankingTable, type VenueStat } from "./VenueRankingTable";
 
 type Partner = { id: string; name: string; question_set_id: string | null; alert_threshold: number };
@@ -86,6 +87,19 @@ export default async function AdminOverviewPage({
     .filter((v) => v.worstAspect && v.worstAspect.avg < v.partner.alert_threshold)
     .sort((a, b) => a.worstAspect!.avg - b.worstAspect!.avg);
 
+  // Separate from `alerts` above on purpose: that one is about WHAT guests
+  // said, this one is about whether the reviews look genuine at all. Merging
+  // them would bury a possible manipulation among ordinary service problems.
+  const volumeAnomalies = safeSummaries
+    .map((s) => {
+      const detected = detectVolumeAnomaly(s);
+      if (!detected) return null;
+      const partner = safePartners.find((p) => p.id === s.partner_id);
+      return partner ? { partner, detected } : null;
+    })
+    .filter((v): v is { partner: Partner; detected: NonNullable<ReturnType<typeof detectVolumeAnomaly>> } => v !== null)
+    .sort((a, b) => b.detected.ratio - a.detected.ratio);
+
   return (
     <div>
       <div className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-violet">
@@ -106,6 +120,32 @@ export default async function AdminOverviewPage({
           </div>
         ))}
       </div>
+
+      {/* Above the score alerts, because this questions whether the numbers
+          below can be trusted at all — a venue whose reviews may be fabricated
+          shouldn't be read as simply having a service problem. */}
+      {volumeAnomalies.length > 0 && (
+        <div className="mb-6">
+          <div className="mb-1 text-sm font-bold text-ink">Szokatlan forgalom</div>
+          <p className="mb-2.5 text-[11.5px] leading-relaxed text-slate">
+            Ezeknél az egységeknél az elmúlt 24 óra jóval kilóg a saját szokásos napi forgalmukból.
+            Lehet valódi (kampány, rendezvény, hirtelen forgalom), de érdemes ránézni a Naplóra —
+            sok, gyors egymásutánban érkezett, hasonló értékelés manipulációra utalhat.
+          </p>
+          <div className="grid gap-2">
+            {volumeAnomalies.map(({ partner, detected }) => (
+              <Link
+                key={partner.id}
+                href={`/${adminSlug}/log?partner=${partner.id}`}
+                className="block rounded-lg border-2 border-[#F5C518] bg-[#FDF7E3] p-3.5 text-[#6B4E00]"
+              >
+                <span className="font-bold">{partner.name}</span> — {describeAnomaly(detected)}
+                <span className="ml-1.5 font-semibold">Napló megnyitása →</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {alerts.length > 0 && (
         <div className="mb-6">
