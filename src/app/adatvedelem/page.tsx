@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Adatkezelési tájékoztató — Guestly" };
+export const metadata = { title: "Adatkezelési tájékoztató — Fydback" };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -29,7 +29,7 @@ export default function AdatvedelemPage() {
       <div className="flex flex-col gap-7">
         <Section title="1. Ki kezeli az adataidat?">
           <p>
-            Az adatkezelő a Guestly szolgáltatást üzemeltető{" "}
+            Az adatkezelő a Fydback szolgáltatást üzemeltető{" "}
             <strong>[cégnév / egyéni vállalkozó neve — kitöltendő]</strong> (lásd az{" "}
             <Link href="/impresszum" className="font-semibold text-violet">
               Impresszumot
@@ -95,7 +95,7 @@ export default function AdatvedelemPage() {
               A partner (tulajdonos) csak a saját üzletéhez tartozó értékeléseket látja — a vendég
               e-mail címét és a sorsolási azonosítót nem.
             </li>
-            <li>A Guestly üzemeltetője (admin) minden adathoz hozzáfér, a szolgáltatás fenntartásához szükséges mértékben.</li>
+            <li>A Fydback üzemeltetője (admin) minden adathoz hozzáfér, a szolgáltatás fenntartásához szükséges mértékben.</li>
           </ul>
         </Section>
 

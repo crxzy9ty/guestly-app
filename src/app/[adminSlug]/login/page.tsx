@@ -32,7 +32,7 @@ export default function AdminLoginPage({
     <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-ink px-6 py-16">
       <div className="mb-7 flex items-center gap-2">
         <div className="h-5 w-5 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-        <span className="text-lg font-bold tracking-tight text-white">Guestly</span>
+        <span className="text-lg font-bold tracking-tight text-white">Fydback</span>
       </div>
 
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#201D29] p-8">
@@ -40,7 +40,7 @@ export default function AdminLoginPage({
           Belső hozzáférés
         </div>
         <h1 className="mb-1 text-xl font-bold tracking-tight text-white">Admin bejelentkezés</h1>
-        <p className="mb-6 text-sm text-white/55">Csak a Guestly csapata számára.</p>
+        <p className="mb-6 text-sm text-white/55">Csak a Fydback csapata számára.</p>
 
         <form action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="adminSlug" value={adminSlug} />
@@ -53,7 +53,7 @@ export default function AdminLoginPage({
               name="email"
               type="email"
               required
-              placeholder="te@guestly.hu"
+              placeholder="te@fydback.hu"
               className="h-11 w-full rounded-lg border border-white/15 bg-white/[0.06] px-3 text-sm text-white outline-none"
             />
           </div>

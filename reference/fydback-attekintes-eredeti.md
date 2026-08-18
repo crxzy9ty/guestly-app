@@ -4,10 +4,15 @@ Ez a fájl összefoglalja az eddig elkészült terveket, hogy ne kelljen visszag
 
 ---
 
-> ## ⚠️ Olvasási útmutató (2026-07-30)
+> ## ⚠️ Olvasási útmutató
 >
-> **Ez a dokumentum a tervezési fázisban készült, és a technikai állításai
-> elavultak.** Ahol azt írja, hogy „a bejelentkezés és az adatok demó-szinten
+> **A terméket 2026-08-18 óta Fydbacknek hívják**, nem Guestlynek — a domain
+> `fydback.hu`. Ebben a fájlban szándékosan a régi név maradt: ez egy
+> tervezési napló, és a névválasztás maga is egy rögzített döntés volt
+> (lásd a „Márkanév" pontot). Átírni azt jelentené, hogy a név sosem változott.
+> Minden más dokumentum az új nevet használja.
+>
+> **A dokumentum technikai állításai elavultak.** Ahol azt írja, hogy „a bejelentkezés és az adatok demó-szinten
 > működnek", „nincs valódi felhasználó-adatbázis", vagy hogy a Next.js/Supabase
 > átállás egy jövőbeli lépés — az azóta **elkészült és élesben fut**.
 >

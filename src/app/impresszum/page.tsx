@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Impresszum — Guestly" };
+export const metadata = { title: "Impresszum — Fydback" };
 
 export default function ImpresszumPage() {
   return (
@@ -12,7 +12,7 @@ export default function ImpresszumPage() {
 
       <div className="flex flex-col gap-5 text-sm leading-relaxed text-ink">
         <p className="rounded-lg bg-mist p-3 text-[12.5px] text-slate">
-          Ez az oldal jelenleg kitöltésre vár — az alábbi mezőket a szolgáltató (Guestly) tényleges cég-
+          Ez az oldal jelenleg kitöltésre vár — az alábbi mezőket a szolgáltató (Fydback) tényleges cég-
           vagy egyéni vállalkozói adataival kell helyettesíteni, mielőtt az oldal éles, fizető
           ügyfelekkel működne.
         </p>

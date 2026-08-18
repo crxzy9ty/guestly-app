@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-// The admin area lives at a URL only the Guestly team knows: this dynamic
+// The admin area lives at a URL only the Fydback team knows: this dynamic
 // segment must match ADMIN_ROUTE_SECRET exactly, or the request gets a real
 // 404 (not a redirect — a redirect would leak "this route exists, you're
 // just not allowed in"). Not linked from any nav. Combined with the

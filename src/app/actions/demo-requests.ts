@@ -61,8 +61,8 @@ export async function submitDemoRequest(
         ``,
         `Köszönjük a jelentkezést a(z) ${business} nevében. Hamarosan felvesszük veled a kapcsolatot, hogy egyeztessünk egy 15 perces bemutatót.`,
         ``,
-        `Ezt a levelet azért kaptad, mert demót kértél a guestly-app-gamma.vercel.app oldalon.`,
-        `Guestly`,
+        `Ezt a levelet azért kaptad, mert demót kértél a fydback-app-gamma.vercel.app oldalon.`,
+        `Fydback`,
       ].join("\n"),
       html: `
         <p>Szia ${escapeHtml(firstName)}!</p>
@@ -70,7 +70,7 @@ export async function submitDemoRequest(
         hogy egyeztessünk egy 15 perces bemutatót.</p>
         <hr style="border:none;border-top:1px solid #e6e4ee;margin:24px 0">
         <p style="font-size:12px;color:#6b6880">
-          Ezt a levelet azért kaptad, mert demót kértél a Guestly oldalán.
+          Ezt a levelet azért kaptad, mert demót kértél a Fydback oldalán.
         </p>
       `,
     });

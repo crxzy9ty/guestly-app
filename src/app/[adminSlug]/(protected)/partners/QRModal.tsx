@@ -63,7 +63,7 @@ export function QRModal({
         <div className="flex flex-wrap justify-center gap-2">
           <a
             href={dataUrl ?? "#"}
-            download={`guestly-qr-${partner.id}.png`}
+            download={`fydback-qr-${partner.id}.png`}
             className={`h-10 rounded-lg bg-ink px-4 text-sm font-bold leading-10 text-white ${dataUrl ? "" : "pointer-events-none opacity-40"}`}
           >
             Letöltés (PNG)

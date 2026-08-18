@@ -1,4 +1,4 @@
-# Guestly
+# Fydback
 
 QR-kód alapú vendégelégedettség-mérés vendéglátóhelyeknek. A vendég az asztalon
 lévő kódot beolvasva 30 másodperc alatt értékel öt szempontot; a tulajdonos
@@ -31,7 +31,7 @@ vendég-beküldés nem működik.
 | `/demo` | bárki | demó-kérés űrlap |
 | `/ertekeles/<partnerId>` | vendég, QR-ból | az értékelő folyamat |
 | `/login` → `/dashboard` | partner (`role = 'owner'`) | csak a saját egysége, vendég-e-mail nélkül |
-| `/<ADMIN_ROUTE_SECRET>/…` | Guestly csapat (`role = 'admin'`) | minden partner, e-mail címekkel és sorsolással |
+| `/<ADMIN_ROUTE_SECRET>/…` | Fydback csapat (`role = 'admin'`) | minden partner, e-mail címekkel és sorsolással |
 
 Az admin felület egy **titkos, sehonnan nem linkelt URL-en** van: ha a szegmens
 nem egyezik az `ADMIN_ROUTE_SECRET`-tel, valódi 404 jön (nem átirányítás — az
@@ -87,6 +87,10 @@ npx tsc --noEmit # típusellenőrzés
 
 ## Dokumentáció
 
+- `reference/fydback-termek-brief.md` — **önálló termékleírás**: mit tud, kinek,
+  milyen döntések születtek. Bemásolható egy AI-beszélgetésbe ötleteléshez.
 - `reference/audit-2026-07-30.md` — kódaudit, a talált hibák és a státuszuk
-- `reference/guestly-attekintes.md` — termék- és üzleti döntések háttere
+- `reference/fydback-attekintes-eredeti.md` — az eredeti tervezési napló. Üzleti
+  része (árazás, csomagok, partnerszerzés) érvényes; a technikai állításai
+  elavultak, és szándékosan a régi „Guestly" nevet használja.
 - `AGENTS.md` / `CLAUDE.md` — utasítások AI-asszisztensnek

@@ -105,7 +105,7 @@ export default async function AdminOverviewPage({
       <div className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-violet">
         Admin nézet · összes egység
       </div>
-      <h1 className="mb-6 text-2xl font-bold tracking-tight text-ink">Guestly — minden partner</h1>
+      <h1 className="mb-6 text-2xl font-bold tracking-tight text-ink">Fydback — minden partner</h1>
 
       <div className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {[

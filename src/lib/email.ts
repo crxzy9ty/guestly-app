@@ -4,8 +4,8 @@ import { Resend } from "resend";
 // EMAIL_FROM defaults to Resend's shared test sender, which works
 // immediately with zero setup but only looks professional once a real
 // domain is verified in the Resend dashboard and EMAIL_FROM is updated to
-// match (e.g. "Guestly <hello@guestly.hu>").
-const FROM = process.env.EMAIL_FROM ?? "Guestly <onboarding@resend.dev>";
+// match (e.g. "Fydback <hello@fydback.hu>").
+const FROM = process.env.EMAIL_FROM ?? "Fydback <onboarding@resend.dev>";
 
 // Any string interpolated into an email HTML body must go through this if it
 // originates from user input (guest-typed review reasons, demo-request

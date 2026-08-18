@@ -15,7 +15,7 @@ export const ownerHelpFaqs: HelpFaq[] = [
   },
   {
     q: "Miért nem látom a vendégek e-mail címét?",
-    a: "Adatvédelmi okból a vendégek e-mail címét és a sorsolási azonosítót csak a Guestly admin felülete mutatja — ez a partneri nézetben szándékosan nincs benne.",
+    a: "Adatvédelmi okból a vendégek e-mail címét és a sorsolási azonosítót csak a Fydback admin felülete mutatja — ez a partneri nézetben szándékosan nincs benne.",
   },
   {
     q: "Hogyan kapok visszajelzést?",

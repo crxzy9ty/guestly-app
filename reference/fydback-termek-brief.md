@@ -1,6 +1,6 @@
-# Guestly — termékleírás beszélgetéshez
+# Fydback — termékleírás beszélgetéshez
 
-> **Mi ez a fájl:** önmagában elegendő összefoglaló a Guestly nevű működő
+> **Mi ez a fájl:** önmagában elegendő összefoglaló a Fydback nevű működő
 > alkalmazásról, hogy egy AI-asszisztens (vagy bárki új) átlássa a terméket, és
 > érdemben lehessen vele ötletelni fejlesztésekről, pozicionálásról, üzleti
 > kérdésekről. Nem kódot ír le, hanem működést és döntéseket.
@@ -12,7 +12,7 @@
 
 ## 1. Egy bekezdésben
 
-A Guestly vendégelégedettséget mér vendéglátóhelyeken. Az asztalon egy QR-kód
+A Fydback vendégelégedettséget mér vendéglátóhelyeken. Az asztalon egy QR-kód
 van; a vendég beolvassa, és kb. 30 másodperc alatt értékel öt szempontot
 1–10-es skálán. Nincs app, nincs regisztráció. A tulajdonos ebből **nap és
 napszak szerinti bontásban** látja, mikor romlik el a kiszolgálás — nem havi
@@ -47,7 +47,7 @@ sorsolási adatot** — ez adatvédelmi döntés, adatbázis-szinten kikényszer
   Szűrhető és CSV-be exportálható.
 - **Súgó** fül.
 
-### Az admin (a Guestly csapata)
+### Az admin (a Fydback csapata)
 Rejtett, sehonnan nem linkelt URL-en, valódi jogosultság-ellenőrzéssel.
 
 - **Portfólió-áttekintés**: minden partner, rangsor átlag szerint, 24 órás és
@@ -102,7 +102,7 @@ egységenként.
 
 A viszonyítási alap **nem** a QR-kód generátorok, hanem a **Google Review**:
 
-| | Google Review | Guestly |
+| | Google Review | Fydback |
 |---|---|---|
 | Mikor tudod meg | napokkal-hetekkel később | aznap, óránkénti bontásban |
 | Ki látja | bárki, nyilvánosan | csak te és a csapatod |
@@ -112,7 +112,7 @@ A viszonyítási alap **nem** a QR-kód generátorok, hanem a **Google Review**:
 
 A kulcsérv: **a kumulatív átlag elrejti a romlást.** Egy 5 éve működő helynél egy
 rossz hónap alig mozdítja a csillagszámot, tehát a probléma nem látszik, amíg
-már késő. A Guestly ezt a pillanat előtt hozza el, belsőleg.
+már késő. A Fydback ezt a pillanat előtt hozza el, belsőleg.
 
 Másodlagos, de fontos: **vállalkozásfejlesztési eszköz is** — megmutatja, mikor
 kell több ember a műszakba. Ezt tudatosan **fejlesztés-orientált**, nem

@@ -184,7 +184,7 @@ export function PartnerManager({
 
   const exportCsv = () => {
     downloadCsv(
-      `guestly-partnerek-${new Date().toISOString().slice(0, 10)}.csv`,
+      `fydback-partnerek-${new Date().toISOString().slice(0, 10)}.csv`,
       [
         "nev",
         "cim",

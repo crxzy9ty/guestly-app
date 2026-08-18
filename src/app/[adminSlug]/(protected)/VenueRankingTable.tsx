@@ -25,7 +25,7 @@ export function VenueRankingTable({ stats, adminSlug }: { stats: VenueStat[]; ad
 
   const exportCsv = () => {
     downloadCsv(
-      `guestly-rangsor-${new Date().toISOString().slice(0, 10)}.csv`,
+      `fydback-rangsor-${new Date().toISOString().slice(0, 10)}.csv`,
       ["egyseg", "atlag", "ertekelesek", "sorsolasra_jelentkezett", "leggyengebb_szempont"],
       filtered.map((s) => [
         s.name,

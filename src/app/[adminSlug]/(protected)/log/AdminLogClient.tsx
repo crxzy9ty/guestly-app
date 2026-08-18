@@ -96,7 +96,7 @@ export function AdminLogClient({
 
   const exportCsv = () => {
     downloadCsv(
-      `guestly-naplo-${new Date().toISOString().slice(0, 10)}.csv`,
+      `fydback-naplo-${new Date().toISOString().slice(0, 10)}.csv`,
       ["szavazat_id", "sorsolas_id", "email", "egyseg", "idopont", ...aspects.map((a) => a.key), "indoklas"],
       filtered.map((r) => [
         formatSubmissionId(r.id),

@@ -51,7 +51,7 @@ export default async function Home() {
       <div className="mx-auto flex max-w-4xl items-center justify-between bg-paper px-6 py-5">
         <div className="flex items-center gap-2">
           <div className="h-5 w-5 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-          <span className="text-lg font-bold tracking-tight text-ink">Guestly</span>
+          <span className="text-lg font-bold tracking-tight text-ink">Fydback</span>
         </div>
         <div className="flex items-center gap-2.5">
           <Link href="/login" className="px-1.5 py-2 text-sm font-semibold text-ink">
@@ -108,14 +108,14 @@ export default async function Home() {
         </div>
       </Section>
 
-      {/* Guestly vs Google Review */}
+      {/* Fydback vs Google Review */}
       <Section>
         <Eyebrow>Miért nem elég a Google Review</Eyebrow>
         <h2 className="mb-4 max-w-lg text-[28px] font-bold tracking-tight">
           Nem egy plusz csatorna vagyunk — egy korábbi lépcsőfok
         </h2>
         <p className="mb-7 max-w-xl text-[15px] leading-relaxed text-slate">
-          A Google Review akkor derít fényt a problémára, amikor már nyilvános, és a vendég már döntött. A Guestly ezt a
+          A Google Review akkor derít fényt a problémára, amikor már nyilvános, és a vendég már döntött. A Fydback ezt a
           pillanat előtt hozza el hozzád — belsőleg, cselekvésre alkalmas formában.
         </p>
         <div className="overflow-x-auto rounded-2xl border border-line">
@@ -124,15 +124,15 @@ export default async function Home() {
               <tr className="bg-mist text-left">
                 <th className="px-4 py-3"></th>
                 <th className="px-4 py-3 font-bold text-slate">Google Review</th>
-                <th className="px-4 py-3 font-bold text-ink">Guestly</th>
+                <th className="px-4 py-3 font-bold text-ink">Fydback</th>
               </tr>
             </thead>
             <tbody>
-              {COMPARISON_ROWS.map(([label, google, guestly], i) => (
+              {COMPARISON_ROWS.map(([label, google, ours], i) => (
                 <tr key={label} className={`border-t border-line ${i % 2 ? "bg-mist" : "bg-paper"}`}>
                   <td className="px-4 py-3 font-bold text-ink">{label}</td>
                   <td className="px-4 py-3 text-slate">{google}</td>
-                  <td className="px-4 py-3 font-semibold text-ink">{guestly}</td>
+                  <td className="px-4 py-3 font-semibold text-ink">{ours}</td>
                 </tr>
               ))}
             </tbody>
@@ -210,7 +210,7 @@ export default async function Home() {
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="h-4 w-4 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-            <span className="text-sm font-bold tracking-tight text-ink">Guestly</span>
+            <span className="text-sm font-bold tracking-tight text-ink">Fydback</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-slate">
             <Link href="/adatvedelem" className="hover:text-ink">
@@ -219,7 +219,7 @@ export default async function Home() {
             <Link href="/impresszum" className="hover:text-ink">
               Impresszum
             </Link>
-            <span>© 2026 Guestly</span>
+            <span>© 2026 Fydback</span>
           </div>
         </div>
       </div>

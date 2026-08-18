@@ -32,7 +32,7 @@ export function DemoRequestsList({ adminSlug, requests }: { adminSlug: string; r
 
   const exportCsv = () => {
     downloadCsv(
-      `guestly-demo-keresek-${new Date().toISOString().slice(0, 10)}.csv`,
+      `fydback-demo-keresek-${new Date().toISOString().slice(0, 10)}.csv`,
       ["nev", "email", "vallalkozas", "uzenet", "statusz", "datum"],
       filtered.map((r) => [r.name, r.email, r.business, r.message, r.status, fmtTs(r.created_at)]),
     );

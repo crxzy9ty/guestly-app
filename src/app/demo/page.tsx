@@ -45,7 +45,7 @@ export default function DemoRequestPage() {
     <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-mist px-6 py-16">
       <div className="mb-7 flex items-center gap-2">
         <div className="h-5 w-5 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-        <span className="text-lg font-bold tracking-tight text-ink">Guestly</span>
+        <span className="text-lg font-bold tracking-tight text-ink">Fydback</span>
       </div>
 
       <div className="w-full max-w-md rounded-2xl border border-line bg-paper p-8 shadow-[0_20px_50px_rgba(21,19,28,0.08)]">
@@ -83,7 +83,7 @@ export default function DemoRequestPage() {
           <label className="flex items-start gap-2 text-left text-[11.5px] leading-relaxed text-slate">
             <input type="checkbox" name="consent" required className="mt-0.5 shrink-0" />
             <span>
-              Hozzájárulok, hogy a megadott adataimat a Guestly a demó egyeztetése és a kapcsolatfelvétel
+              Hozzájárulok, hogy a megadott adataimat a Fydback a demó egyeztetése és a kapcsolatfelvétel
               céljából kezelje. Részletek az{" "}
               <Link href="/adatvedelem" target="_blank" className="font-semibold text-ink underline">
                 adatkezelési tájékoztatóban

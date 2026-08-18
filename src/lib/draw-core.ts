@@ -159,7 +159,7 @@ export async function drawWinnerForPartner(
         `Legközelebbi látogatásodkor mutasd meg ezt a kódot a pultnál. Nincs szükség appra vagy regisztrációra.`,
         ``,
         `Ezt a levelet azért kaptad, mert a(z) ${venue} értékelése után megadtad az e-mail címed a napi sorsoláshoz. A címedet másra nem használjuk, és hírlevelet nem küldünk.`,
-        `Guestly`,
+        `Fydback`,
       ].join("\n"),
       html: `
         <p>Szia!</p>
@@ -169,7 +169,7 @@ export async function drawWinnerForPartner(
         <hr style="border:none;border-top:1px solid #e6e4ee;margin:24px 0">
         <p style="font-size:12px;color:#6b6880;line-height:1.6">
           Ezt a levelet azért kaptad, mert a(z) ${escapeHtml(venue)} értékelése után megadtad az e-mail
-          címed a napi sorsoláshoz. A címedet másra nem használjuk, és hírlevelet nem küldünk.<br>Guestly
+          címed a napi sorsoláshoz. A címedet másra nem használjuk, és hírlevelet nem küldünk.<br>Fydback
         </p>
       `,
     });

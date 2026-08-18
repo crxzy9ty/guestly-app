@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Guestly",
+  title: "Fydback",
   description: "Vendégelégedettség-mérés valós időben.",
 };
 
