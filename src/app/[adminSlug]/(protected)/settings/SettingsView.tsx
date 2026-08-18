@@ -19,6 +19,7 @@ export function SettingsView({
   partners,
   admins,
   currentUserId,
+  canDeleteAdmins,
 }: {
   adminSlug: string;
   content: MarketingContent;
@@ -28,6 +29,7 @@ export function SettingsView({
   partners: Partner[];
   admins: AdminRow[];
   currentUserId: string;
+  canDeleteAdmins: boolean;
 }) {
   const [tab, setTab] = useState<"sets" | "assign" | "content" | "demos" | "admins">("sets");
 
@@ -57,7 +59,14 @@ export function SettingsView({
       {tab === "assign" && <PartnerAssignment adminSlug={adminSlug} questionSets={questionSets} partners={partners} />}
       {tab === "content" && <ContentEditor adminSlug={adminSlug} initial={content} />}
       {tab === "demos" && <DemoRequestsList adminSlug={adminSlug} requests={demoRequests} />}
-      {tab === "admins" && <AdminsManager adminSlug={adminSlug} admins={admins} currentUserId={currentUserId} />}
+      {tab === "admins" && (
+        <AdminsManager
+          adminSlug={adminSlug}
+          admins={admins}
+          currentUserId={currentUserId}
+          canDelete={canDeleteAdmins}
+        />
+      )}
     </div>
   );
 }

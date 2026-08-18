@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { inviteAdmin } from "@/app/actions/invite-admin";
+import { deleteAdmin } from "@/app/actions/delete-admin";
 import { formatRelative, staleness, stalenessColor, exactTooltip } from "@/lib/relative-time";
 
 export type AdminRow = { id: string; email: string | null; last_seen_at: string | null };
@@ -122,8 +123,25 @@ function InviteAdminModal({ adminSlug, onClose }: { adminSlug: string; onClose: 
   );
 }
 
-export function AdminsManager({ adminSlug, admins, currentUserId }: { adminSlug: string; admins: AdminRow[]; currentUserId: string }) {
+export function AdminsManager({
+  adminSlug,
+  admins,
+  currentUserId,
+  canDelete,
+}: {
+  adminSlug: string;
+  admins: AdminRow[];
+  currentUserId: string;
+  // Server-computed: true only for the one account SUPER_ADMIN_EMAIL names.
+  // This gates the UI so other admins don't see a button that would just
+  // error — the server action re-checks independently regardless, since a
+  // hidden button is a UX nicety, not the actual access control.
+  canDelete: boolean;
+}) {
   const [inviting, setInviting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isDeleting, startDelete] = useTransition();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   return (
     <div>
@@ -140,23 +158,27 @@ export function AdminsManager({ adminSlug, admins, currentUserId }: { adminSlug:
         </button>
       </div>
 
+      {deleteError && <p className="mb-3 text-sm font-medium text-magenta">{deleteError}</p>}
+
       <div className="overflow-auto rounded-xl border border-line bg-paper">
         <table className="w-full min-w-[420px] border-collapse text-xs">
           <thead>
             <tr className="bg-mist text-left">
               <th className="px-3 py-2 font-bold text-slate">E-mail</th>
               <th className="px-3 py-2 font-bold text-slate">Utolsó belépés</th>
+              {canDelete && <th className="px-3 py-2 font-bold text-slate"></th>}
             </tr>
           </thead>
           <tbody>
             {admins.map((a) => {
               const state = staleness(a.last_seen_at, "login");
               const color = stalenessColor(state);
+              const isSelf = a.id === currentUserId;
               return (
                 <tr key={a.id} className="border-t border-line">
                   <td className="px-3 py-2 font-bold text-ink">
                     {a.email ?? "—"}
-                    {a.id === currentUserId && (
+                    {isSelf && (
                       <span className="ml-1.5 rounded-full bg-line px-1.5 py-0.5 text-[10px] font-bold text-slate">
                         te
                       </span>
@@ -171,6 +193,52 @@ export function AdminsManager({ adminSlug, admins, currentUserId }: { adminSlug:
                       {formatRelative(a.last_seen_at)}
                     </span>
                   </td>
+                  {canDelete && (
+                    <td className="px-3 py-2 text-right">
+                      {/* Even the one account allowed to delete admins can't
+                          remove itself here — deleteAdmin() refuses it
+                          server-side too, but hiding the button avoids
+                          offering an action that would only ever fail. */}
+                      {isSelf ? null : confirmDeleteId === a.id ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <button
+                            disabled={isDeleting}
+                            onClick={() =>
+                              startDelete(async () => {
+                                const res = await deleteAdmin(adminSlug, a.id);
+                                if (res.ok) {
+                                  setConfirmDeleteId(null);
+                                  setDeleteError(null);
+                                } else {
+                                  setDeleteError(res.error);
+                                }
+                              })
+                            }
+                            className="rounded-md bg-magenta px-2 py-1 text-[11px] font-bold text-white disabled:opacity-50"
+                          >
+                            {isDeleting ? "Törlés…" : "Megerősítés"}
+                          </button>
+                          <button
+                            disabled={isDeleting}
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="rounded-md border border-line px-2 py-1 text-[11px] text-slate"
+                          >
+                            Mégsem
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setDeleteError(null);
+                            setConfirmDeleteId(a.id);
+                          }}
+                          className="text-[11px] font-semibold text-slate hover:text-magenta"
+                        >
+                          Törlés
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}

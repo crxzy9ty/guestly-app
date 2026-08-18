@@ -93,6 +93,10 @@ export const adminHelpFaqs: HelpFaq[] = [
     a: "A Beállítások → Adminok fülön a \"+ Admin meghívása\" gombbal. Egyszerre több admin fiók is bejelentkezhet, egymástól függetlenül, más-más helyről — nincs korlátozva a szám. Fontos: minden admin fiók ugyanazt a teljes hozzáférést kapja minden partner adatához, vendég-e-mail címekkel és sorsolási adatokkal együtt, tehát csak megbízható embert hívj meg.",
   },
   {
+    q: "Hogyan törlök egy admin fiókot?",
+    a: "Ezt szándékosan csak egyetlen, kijelölt fiók teheti meg — nála a lista minden sorában megjelenik egy \"Törlés\" gomb. Ha nálad nem látszik, az azt jelenti, hogy a te fiókod nincs erre kijelölve; ez nem hiba, hanem tudatos korlátozás, hogy egy admin fiók feltörése esetén se lehessen az összes többit egyszerre eltávolítani. A saját fiókodat még a kijelölt fiókkal sem lehet törölni, hogy soha ne maradhasson admin nélkül a rendszer.",
+  },
+  {
     q: "Hogyan módosítom a saját jelszavam?",
     a: "A fejlécben a \"Jelszó módosítása\" linkre kattintva egyenesen az új jelszó megadására jutsz — nem kell hozzá kilépned vagy e-mailt kérned.",
   },

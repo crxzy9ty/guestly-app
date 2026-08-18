@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { DEFAULT_CONTENT, type MarketingContent } from "@/lib/content";
+import { isSuperAdminEmail } from "@/lib/super-admin";
 import { SettingsView } from "./SettingsView";
 
 export default async function AdminSettingsPage({
@@ -50,6 +51,10 @@ export default async function AdminSettingsPage({
         partners={partners ?? []}
         admins={admins ?? []}
         currentUserId={user.id}
+        // Only the boolean crosses the server/client boundary, never the
+        // configured address itself — the client bundle has no way to learn
+        // what SUPER_ADMIN_EMAIL is set to.
+        canDeleteAdmins={isSuperAdminEmail(user.email)}
       />
     </div>
   );
