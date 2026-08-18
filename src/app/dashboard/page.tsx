@@ -6,6 +6,7 @@ import { VenueSwitcher } from "./VenueSwitcher";
 import { OwnerDashboardClient } from "./OwnerDashboardClient";
 import type { LogRow } from "./LogTable";
 import { gridsByAspect, joinAspectAverages, weakestBucket, type HeatmapBucketRow } from "@/lib/dashboard/heatmap";
+import { trendSeriesByAspect, type TrendBucketRow } from "@/lib/dashboard/trend";
 import { parsePeriod, periodDays } from "@/lib/dashboard/period";
 
 // How many recent submissions the Napló shows. Bounded on purpose: this is the
@@ -73,7 +74,7 @@ export default async function DashboardPage({
   // supabase/migrations/..._aggregate_stats_views.sql) and the log is capped, so
   // none of this scales with the number of reviews the way the previous
   // fetch-everything-and-average-in-JS version did.
-  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: logs }] =
+  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: trendRows }, { data: logs }] =
     await Promise.all([
       supabase
         .from("question_aspects")
@@ -94,6 +95,10 @@ export default async function DashboardPage({
         target_partner_id: selected.id,
         since_days: sinceDays,
       }),
+      supabase.rpc("partner_aspect_trend_range", {
+        target_partner_id: selected.id,
+        since_days: sinceDays,
+      }),
       supabase
         .from("submission_log_view")
         .select("id, created_at, scores, reasons")
@@ -107,6 +112,10 @@ export default async function DashboardPage({
   const grids = gridsByAspect(
     safeAspects.map((a) => a.key),
     (heatmapRows ?? []) as HeatmapBucketRow[],
+  );
+  const trendSeries = trendSeriesByAspect(
+    safeAspects.map((a) => a.key),
+    (trendRows ?? []) as TrendBucketRow[],
   );
 
   // Counted in SQL across the selected window, so it stays correct even though
@@ -147,6 +156,7 @@ export default async function DashboardPage({
         period={period}
         aspectAverages={aspectAverages}
         grids={grids}
+        trendSeries={trendSeries}
         alertMessage={alertMessage}
         totalSubmissions={totalSubmissions}
         logRows={logRows}

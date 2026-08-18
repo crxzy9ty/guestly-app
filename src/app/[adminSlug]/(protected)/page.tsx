@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { detectVolumeAnomaly, describeAnomaly } from "@/lib/anomaly";
+import { fillDailyGaps } from "@/lib/dashboard/trend";
+import { PortfolioTrendChart } from "./PortfolioTrendChart";
 import { VenueRankingTable, type VenueStat } from "./VenueRankingTable";
+
+// Fixed window for the portfolio heartbeat chart — a simple "last 30 days",
+// not tied to the per-venue period picker elsewhere, since this is a
+// portfolio-wide glance rather than a drill-down.
+const PORTFOLIO_TREND_DAYS = 30;
 
 type Partner = { id: string; name: string; question_set_id: string | null; alert_threshold: number };
 type Aspect = { key: string; label: string; question_set_id: string };
@@ -21,19 +28,22 @@ export default async function AdminOverviewPage({
   // and from a non-deterministic subset — from roughly 200 total reviews on.
   // The aggregation now happens in SQL and returns one row per partner (plus
   // one per partner/aspect pair), which cannot outgrow that ceiling.
-  const [{ data: partners }, { data: summaries }, { data: aspectStats }, { data: aspects }] = await Promise.all([
-    supabase.from("partners").select("id, name, question_set_id, alert_threshold").order("name"),
-    supabase
-      .from("partner_summary_stats")
-      .select("partner_id, review_count, prize_count, reviews_24h, reviews_7d, avg_score"),
-    supabase.from("partner_aspect_stats").select("partner_id, aspect_key, avg_score, score_count"),
-    supabase.from("question_aspects").select("key, label, question_set_id"),
-  ]);
+  const [{ data: partners }, { data: summaries }, { data: aspectStats }, { data: aspects }, { data: portfolioRows }] =
+    await Promise.all([
+      supabase.from("partners").select("id, name, question_set_id, alert_threshold").order("name"),
+      supabase
+        .from("partner_summary_stats")
+        .select("partner_id, review_count, prize_count, reviews_24h, reviews_7d, avg_score"),
+      supabase.from("partner_aspect_stats").select("partner_id, aspect_key, avg_score, score_count"),
+      supabase.from("question_aspects").select("key, label, question_set_id"),
+      supabase.rpc("portfolio_daily_review_counts", { since_days: PORTFOLIO_TREND_DAYS }),
+    ]);
 
   const safePartners = (partners ?? []) as Partner[];
   const safeSummaries = summaries ?? [];
   const safeAspectStats = aspectStats ?? [];
   const safeAspects = (aspects ?? []) as Aspect[];
+  const portfolioTrend = fillDailyGaps(portfolioRows ?? [], PORTFOLIO_TREND_DAYS);
 
   if (safePartners.length === 0) {
     return (
@@ -119,6 +129,11 @@ export default async function AdminOverviewPage({
             <div className="text-xl font-bold tracking-tight text-ink">{val}</div>
           </div>
         ))}
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-line bg-paper p-4">
+        <div className="mb-3 text-sm font-bold text-ink">Napi értékelésszám — utolsó 30 nap</div>
+        <PortfolioTrendChart points={portfolioTrend} />
       </div>
 
       {/* Above the score alerts, because this questions whether the numbers

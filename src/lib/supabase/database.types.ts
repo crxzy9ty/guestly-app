@@ -298,6 +298,25 @@ export interface Database {
           score_count: number;
         }[];
       };
+      // Per-partner, per-aspect time series at an adaptive granularity
+      // (day/week/month, chosen server-side based on since_days). Powers the
+      // Trend toggle next to the heatmap in VenueInsights.
+      partner_aspect_trend_range: {
+        Args: { target_partner_id: string; since_days: number | null };
+        Returns: {
+          bucket_date: string;
+          granularity: "day" | "week" | "month";
+          aspect_key: string;
+          avg_score: number;
+          score_count: number;
+        }[];
+      };
+      // Admin-only, portfolio-wide daily submission counts. Powers the
+      // heartbeat chart on the admin Áttekintés page.
+      portfolio_daily_review_counts: {
+        Args: { since_days: number | null };
+        Returns: { bucket_date: string; review_count: number }[];
+      };
       // The single write path for guest reviews. service_role only — anon
       // holds no INSERT on submissions any more, by design.
       submit_guest_review: {

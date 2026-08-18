@@ -7,10 +7,12 @@ import { VenueInsights } from "@/app/VenueInsights";
 import { ownerHelpFaqs } from "@/lib/help-content";
 import { periodLabel, type PeriodValue } from "@/lib/dashboard/period";
 import type { AspectAverage, HeatmapGrid } from "@/lib/dashboard/heatmap";
+import type { TrendPoint } from "@/lib/dashboard/trend";
 
 export function OwnerDashboardClient({
   aspectAverages,
   grids,
+  trendSeries,
   alertMessage,
   totalSubmissions,
   logRows,
@@ -19,6 +21,7 @@ export function OwnerDashboardClient({
 }: {
   aspectAverages: AspectAverage[];
   grids: Record<string, HeatmapGrid>;
+  trendSeries: Record<string, TrendPoint[]>;
   alertMessage: string | null;
   totalSubmissions: number;
   logRows: LogRow[];
@@ -66,6 +69,7 @@ export function OwnerDashboardClient({
           period={period}
           aspectAverages={aspectAverages}
           grids={grids}
+          trendSeries={trendSeries}
           alertMessage={alertMessage}
           totalSubmissions={totalSubmissions}
         />

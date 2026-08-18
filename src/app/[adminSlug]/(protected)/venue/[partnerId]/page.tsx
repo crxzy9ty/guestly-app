@@ -8,6 +8,7 @@ import {
   weakestBucket,
   type HeatmapBucketRow,
 } from "@/lib/dashboard/heatmap";
+import { trendSeriesByAspect, type TrendBucketRow } from "@/lib/dashboard/trend";
 import { parsePeriod, periodDays, periodLabel } from "@/lib/dashboard/period";
 
 // Admin view of a single venue, showing exactly what that venue's owner sees
@@ -39,7 +40,7 @@ export default async function AdminVenueDetailPage({
     notFound();
   }
 
-  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }] =
+  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: trendRows }] =
     await Promise.all([
       supabase
         .from("question_aspects")
@@ -57,6 +58,10 @@ export default async function AdminVenueDetailPage({
         target_partner_id: partner.id,
         since_days: sinceDays,
       }),
+      supabase.rpc("partner_aspect_trend_range", {
+        target_partner_id: partner.id,
+        since_days: sinceDays,
+      }),
     ]);
 
   const safeAspects = aspects ?? [];
@@ -64,6 +69,10 @@ export default async function AdminVenueDetailPage({
   const grids = gridsByAspect(
     safeAspects.map((a) => a.key),
     (heatmapRows ?? []) as HeatmapBucketRow[],
+  );
+  const trendSeries = trendSeriesByAspect(
+    safeAspects.map((a) => a.key),
+    (trendRows ?? []) as TrendBucketRow[],
   );
   const totalSubmissions = Number(summary?.review_count ?? 0);
 
@@ -115,6 +124,7 @@ export default async function AdminVenueDetailPage({
         period={period}
         aspectAverages={aspectAverages}
         grids={grids}
+        trendSeries={trendSeries}
         alertMessage={alertMessage}
         totalSubmissions={totalSubmissions}
       />

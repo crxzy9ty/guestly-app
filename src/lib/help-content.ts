@@ -6,6 +6,10 @@ export const ownerHelpFaqs: HelpFaq[] = [
     a: "Minden cella egy adott nap egy adott óráját mutatja, 1-10 skálán. Minél zöldebb egy cella, annál jobb az átlag; a magenta/rózsaszín cellák gyengébb eredményt jeleznek. Az üres, szaggatott keretű cellákhoz még nem érkezett elég értékelés.",
   },
   {
+    q: "Mi a különbség a Hőtérkép és a Trend nézet között?",
+    a: "A Hőtérkép azt mutatja meg, mikor (melyik nap, melyik napszak) gyengébb egy szempont — ez segít eldönteni, mikor kell erősíteni a személyzetet. A Trend ugyanezeket az értékeléseket időrendben mutatja, hogy lásd, javul vagy romlik-e a szempont a kiválasztott időszakban. A kettő közt a kártya jobb felső sarkában lévő kapcsolóval válthatsz.",
+  },
+  {
     q: "Miért mutat figyelmeztetést a rendszer?",
     a: "Ha egy szempont átlaga a partneredhez beállított riasztási küszöb alá esik, a rendszer automatikusan kiemeli — a konkrét nap+óra megjelölésével, ha van rá elég adat —, hogy időben tudj reagálni, például extra személyzetet beosztani egy forgalmas időszakra.",
   },
@@ -51,6 +55,10 @@ export const adminHelpFaqs: HelpFaq[] = [
   {
     q: "Hogyan tudok QR-kódot generálni egy partnerhez?",
     a: "A Partnerek táblázatban minden sornál található egy \"QR-kód\" gomb — ez megnyit egy előnézetet, amit letölthetsz és kinyomtathatsz kihelyezésre.",
+  },
+  {
+    q: "Mit mutat a \"Napi értékelésszám\" grafikon az Áttekintésen?",
+    a: "Az elmúlt 30 nap értékelésszámát, az összes partner együtt — egyfajta pulzusmérő a teljes portfólióra. A halványszürke, alig látható oszlopok azt jelzik, hogy azon a napon nem érkezett értékelés sehonnan; ez segít észrevenni, ha hirtelen leáll a forgalom (pl. mert egy QR-kód elromlott egy frissítés után), nem csak azt, ha egy adott partnernél kiugrás van — az utóbbit a \"Szokatlan forgalom\" jelzés figyeli.",
   },
   {
     q: "Mit jelent a \"Szokatlan forgalom\" sárga jelzés?",
