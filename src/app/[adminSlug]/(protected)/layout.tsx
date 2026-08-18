@@ -21,11 +21,15 @@ export default async function AdminProtectedLayout({
     redirect(`/${adminSlug}/login`);
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  // Run alongside the role check rather than after it: touch_last_seen() is
+  // self-throttling (a no-op within 15 minutes, see
+  // supabase/migrations/..._partner_activity.sql), so this costs nothing on
+  // repeat visits and is what makes "Utolsó belépés" on the Adminok tab
+  // actually populate — without it every admin would show "még soha" forever.
+  const [{ data: profile }] = await Promise.all([
+    supabase.from("profiles").select("role").eq("id", user.id).single(),
+    supabase.rpc("touch_last_seen"),
+  ]);
 
   if (profile?.role !== "admin") {
     redirect(`/${adminSlug}/login`);

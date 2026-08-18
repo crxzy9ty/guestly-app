@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { DEFAULT_CONTENT, type MarketingContent } from "@/lib/content";
 import { SettingsView } from "./SettingsView";
 
@@ -9,8 +10,18 @@ export default async function AdminSettingsPage({
 }) {
   const { adminSlug } = await params;
   const supabase = await createClient();
+  const user = await getCachedUser();
 
-  const [{ data: contentRow }, { data: demoRequests }, { data: questionSets }, { data: aspects }, { data: partners }] =
+  // The (protected)/layout.tsx guard runs CONCURRENTLY with this page, not
+  // before it — its redirect() does not stop this body from executing on a
+  // session that expires mid-navigation. Repeating the check here (rather
+  // than asserting user is non-null) is what audit finding #1 fixed
+  // elsewhere; skipping it here would reopen the same crash.
+  if (!user) {
+    redirect(`/${adminSlug}/login`);
+  }
+
+  const [{ data: contentRow }, { data: demoRequests }, { data: questionSets }, { data: aspects }, { data: partners }, { data: admins }] =
     await Promise.all([
       supabase.from("content_settings").select("content").eq("id", 1).maybeSingle(),
       supabase
@@ -20,6 +31,9 @@ export default async function AdminSettingsPage({
       supabase.from("question_sets").select("id, name").order("name"),
       supabase.from("question_aspects").select("id, question_set_id, key, label, icon").order("sort_order").order("id"),
       supabase.from("partners").select("id, name, question_set_id").order("name"),
+      // profiles_select_self_or_admin already lets an admin see every row, so
+      // this is a plain filtered select — no new RLS or view needed.
+      supabase.from("profiles").select("id, email, last_seen_at").eq("role", "admin").order("email"),
     ]);
 
   const content = (contentRow?.content as MarketingContent | undefined) ?? DEFAULT_CONTENT;
@@ -34,6 +48,8 @@ export default async function AdminSettingsPage({
         questionSets={questionSets ?? []}
         aspects={aspects ?? []}
         partners={partners ?? []}
+        admins={admins ?? []}
+        currentUserId={user.id}
       />
     </div>
   );

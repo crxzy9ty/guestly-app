@@ -25,6 +25,10 @@ export const ownerHelpFaqs: HelpFaq[] = [
     q: "Több egységet is kezelek — hogyan váltok köztük?",
     a: "Ha egynél több egységhez van hozzáférésed, a fejlécben egy egység-választó jelenik meg — ott tudsz váltani, az Áttekintés és a Napló mindig a kiválasztott egységre vonatkozik.",
   },
+  {
+    q: "Hogyan módosítom a jelszavam?",
+    a: "A fejlécben a \"Jelszó módosítása\" linkre kattintva egyenesen az új jelszó megadására jutsz — nem kell hozzá kilépned vagy e-mailt kérned.",
+  },
 ];
 
 export const adminHelpFaqs: HelpFaq[] = [
@@ -66,7 +70,7 @@ export const adminHelpFaqs: HelpFaq[] = [
   },
   {
     q: "Mit jelent a Naplóban a piros \"e-mail nem ment ki\" jelzés?",
-    a: "Azt, hogy a vendéget kisorsoltuk, de az értesítő levél nem jutott el hozzá — tehát ő nem tudja, hogy nyert. Ilyenkor neked kell átadnod a kupon-kódot, ami ott áll mellette a sorban. A leggyakoribb ok, hogy még nincs verifikált küldő-domain a Resendben: a teszt-feladó csak a saját fiókod címére tud kézbesíteni, minden más címet elutasít. Ha ez a jelzés rendszeresen megjelenik, a Resendben verifikálj egy domaint, és állítsd át rá az EMAIL_FROM változót.",
+    a: "Azt, hogy a vendéget kisorsoltuk, de az értesítő levél nem jutott el hozzá — tehát ő nem tudja, hogy nyert. Ilyenkor neked kell átadnod a kupon-kódot, ami ott áll mellette a sorban. A küldő domain verifikálva van, de a kézbesítés soha nem lesz 100% — egy levelezőszolgáltató időnként spamnek jelölhet egy levelet, főleg új domainnél, amíg fel nem épül a reputációja.",
   },
   {
     q: "Hogyan szerkesztem a nyilvános landing oldal szövegét?",
@@ -83,5 +87,13 @@ export const adminHelpFaqs: HelpFaq[] = [
   {
     q: "Mit jelent a \"Csak sorsolásra jelentkezettek\" szűrő?",
     a: "Csak azokat az értékeléseket mutatja, ahol a vendég megadta az e-mail címét a nyereményjátékhoz.",
+  },
+  {
+    q: "Hogyan hívok meg egy másik adminisztrátort?",
+    a: "A Beállítások → Adminok fülön a \"+ Admin meghívása\" gombbal. Egyszerre több admin fiók is bejelentkezhet, egymástól függetlenül, más-más helyről — nincs korlátozva a szám. Fontos: minden admin fiók ugyanazt a teljes hozzáférést kapja minden partner adatához, vendég-e-mail címekkel és sorsolási adatokkal együtt, tehát csak megbízható embert hívj meg.",
+  },
+  {
+    q: "Hogyan módosítom a saját jelszavam?",
+    a: "A fejlécben a \"Jelszó módosítása\" linkre kattintva egyenesen az új jelszó megadására jutsz — nem kell hozzá kilépned vagy e-mailt kérned.",
   },
 ];

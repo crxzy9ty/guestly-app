@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { signOutOwner } from "@/app/actions/auth";
 import { VenueSwitcher } from "./VenueSwitcher";
@@ -161,6 +162,9 @@ function Header({ email }: { email: string | undefined }) {
       <div className="text-xs font-bold uppercase tracking-[0.2em] text-violet">Partneri nézet</div>
       <div className="flex items-center gap-3">
         <span className="text-xs text-slate">{email}</span>
+        <Link href="/set-password" className="text-sm font-semibold text-slate hover:text-ink">
+          Jelszó módosítása
+        </Link>
         <form action={signOutOwner}>
           <button type="submit" className="text-sm font-semibold text-slate hover:text-ink">
             Kijelentkezés

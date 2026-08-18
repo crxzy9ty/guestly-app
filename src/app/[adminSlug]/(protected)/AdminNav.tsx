@@ -28,6 +28,14 @@ export function AdminNav({ adminSlug, email }: { adminSlug: string; email: strin
         </div>
         <div className="flex shrink-0 items-center gap-3.5">
           <span className="hidden truncate text-xs text-slate sm:inline">{email}</span>
+          {/* /set-password works for any already-authenticated session, not
+              just the post-invite/reset-link flow it was originally built
+              for — updateUser() only needs a session, it doesn't care how the
+              session was established. So this reuses that page rather than
+              needing a separate change-password form. */}
+          <Link href="/set-password" className="whitespace-nowrap text-sm font-semibold text-slate hover:text-ink">
+            Jelszó módosítása
+          </Link>
           <form action={boundSignOut}>
             <button type="submit" className="whitespace-nowrap text-sm font-semibold text-slate hover:text-ink">
               Kijelentkezés
