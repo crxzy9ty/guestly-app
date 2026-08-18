@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signInOwner, type AuthActionState } from "@/app/actions/auth";
 
@@ -20,6 +21,28 @@ function SubmitButton() {
   );
 }
 
+// /auth/callback redirects here with ?error=auth when exchangeCodeForSession
+// fails — most often because the reset/invite link was opened in a different
+// browser than the one that requested it (the PKCE code verifier lives in a
+// cookie on that first browser), or because the link was already used or has
+// expired. Previously this page ignored the query param entirely, so the
+// guest landed on an ordinary-looking login screen with zero indication
+// anything had gone wrong — indistinguishable from just navigating here.
+function CallbackErrorNotice() {
+  const params = useSearchParams();
+  if (params.get("error") !== "auth") return null;
+  return (
+    <p className="mb-4 rounded-lg border border-line bg-mist p-3 text-xs leading-relaxed text-ink">
+      A link nem működött — lehet, hogy már lejárt, korábban felhasználták, vagy nem ugyanabban a
+      böngészőben nyílt meg, mint amiben a kérést indítottad. Kérj egy{" "}
+      <Link href="/forgot-password" className="font-semibold underline">
+        új linket
+      </Link>
+      , és ugyanabban a böngészőben nyisd meg, mint ahol igényelted.
+    </p>
+  );
+}
+
 export default function LoginPage() {
   const [state, formAction] = useActionState(signInOwner, initialState);
 
@@ -33,6 +56,12 @@ export default function LoginPage() {
       <div className="w-full max-w-sm rounded-2xl border border-line bg-paper p-8 shadow-[0_20px_50px_rgba(21,19,28,0.08)]">
         <h1 className="mb-1 text-xl font-bold tracking-tight text-ink">Üdvözlünk újra</h1>
         <p className="mb-6 text-sm text-slate">Jelentkezz be az üzleted statisztikáinak megtekintéséhez.</p>
+
+        {/* useSearchParams needs a Suspense boundary, or the page can't be
+            statically rendered at build time. */}
+        <Suspense fallback={null}>
+          <CallbackErrorNotice />
+        </Suspense>
 
         <form action={formAction} className="flex flex-col gap-4">
           <div>
