@@ -158,10 +158,11 @@ kulccsal közvetlenül **nem lehet** az adatbázisba írni.
 
 ## 8. Mai korlátok — őszintén
 
-- **Az e-mail-küldés nem működik idegen címre.** Nincs verifikált saját domain,
-  ezért a nyertes-értesítők és a demó-visszaigazolások jelenleg nem érkeznek
-  meg. Ez konfigurációs, nem kódbeli hiány, de **most a legnagyobb akadály** —
-  a nyereményjáték a fő vendég-motiváció.
+- ~~Az e-mail-küldés nem működik idegen címre.~~ **Megoldva 2026-08-18-án**:
+  a `fydback.hu` verifikálva a Resendben (SPF + DKIM + DMARC), a feladó
+  `Fydback <hello@fydback.hu>`. A nyertes-értesítők és a demó-visszaigazolások
+  kézbesülnek. Egy új domain reputációja viszont nulla, ezért az első hetekben
+  levelek még kerülhetnek spambe — ez beállási idő, nem hiba.
 - **A szkriptelt visszaélés nehezebb lett, de nem lehetetlen.** Aki minden
   hamis értékelés előtt betölt egy oldalt, meg tudja csinálni. A nyereményt
   ettől már nem tudja megszerezni (napi 2 sorsjegy/e-mail), és a szokatlan
