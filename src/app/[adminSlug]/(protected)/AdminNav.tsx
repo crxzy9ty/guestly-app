@@ -26,21 +26,44 @@ export function AdminNav({ adminSlug, email }: { adminSlug: string; email: strin
             Admin
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-3.5">
+        <div className="flex shrink-0 items-center gap-3">
           <span className="hidden truncate text-xs text-slate sm:inline">{email}</span>
-          {/* /set-password works for any already-authenticated session, not
-              just the post-invite/reset-link flow it was originally built
-              for — updateUser() only needs a session, it doesn't care how the
-              session was established. So this reuses that page rather than
-              needing a separate change-password form. */}
-          <Link href="/set-password" className="whitespace-nowrap text-sm font-semibold text-slate hover:text-ink">
-            Jelszó módosítása
-          </Link>
-          <form action={boundSignOut}>
-            <button type="submit" className="whitespace-nowrap text-sm font-semibold text-slate hover:text-ink">
-              Kijelentkezés
-            </button>
-          </form>
+          {/* Same treatment as the owner dashboard header: Kijelentkezés and
+              Jelszó módosítása moved behind a menu so they aren't sitting in
+              the open as an easy misclick target. */}
+          <details className="relative shrink-0">
+            <summary
+              aria-label="Fiók menü"
+              className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full bg-mist text-slate [&::-webkit-details-marker]:hidden"
+            >
+              <span className="flex gap-[3px]">
+                <span className="h-1 w-1 rounded-full bg-current" />
+                <span className="h-1 w-1 rounded-full bg-current" />
+                <span className="h-1 w-1 rounded-full bg-current" />
+              </span>
+            </summary>
+            <div className="absolute right-0 z-20 mt-1.5 w-52 rounded-xl border border-line bg-paper p-1.5 shadow-lg">
+              {/* /set-password works for any already-authenticated session,
+                  not just the post-invite/reset-link flow it was originally
+                  built for — updateUser() only needs a session, it doesn't
+                  care how the session was established. So this reuses that
+                  page rather than needing a separate change-password form. */}
+              <Link
+                href="/set-password"
+                className="block rounded-lg px-2.5 py-2 text-sm font-semibold text-ink hover:bg-mist"
+              >
+                Jelszó módosítása
+              </Link>
+              <form action={boundSignOut}>
+                <button
+                  type="submit"
+                  className="block w-full rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-ink hover:bg-mist"
+                >
+                  Kijelentkezés
+                </button>
+              </form>
+            </div>
+          </details>
         </div>
       </div>
       <div className="mx-auto flex max-w-4xl gap-1 overflow-x-auto px-4 sm:px-6">
