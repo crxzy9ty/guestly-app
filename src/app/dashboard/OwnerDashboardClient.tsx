@@ -15,6 +15,7 @@ export function OwnerDashboardClient({
   grids,
   hours,
   trendSeries,
+  wow,
   alertMessage,
   suggestion,
   totalSubmissions,
@@ -26,6 +27,7 @@ export function OwnerDashboardClient({
   grids: Record<string, HeatmapGrid>;
   hours: number[];
   trendSeries: Record<string, TrendPoint[]>;
+  wow: Record<string, number>;
   alertMessage: string | null;
   suggestion: Suggestion | null;
   totalSubmissions: number;
@@ -76,6 +78,7 @@ export function OwnerDashboardClient({
           grids={grids}
           hours={hours}
           trendSeries={trendSeries}
+          wow={wow}
           alertMessage={alertMessage}
           suggestion={suggestion}
           totalSubmissions={totalSubmissions}

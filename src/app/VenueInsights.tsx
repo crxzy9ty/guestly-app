@@ -60,6 +60,7 @@ export function VenueInsights({
   grids,
   hours,
   trendSeries,
+  wow,
   alertMessage,
   suggestion,
   totalSubmissions,
@@ -69,6 +70,7 @@ export function VenueInsights({
   grids: Record<string, HeatmapGrid>;
   hours: number[];
   trendSeries: Record<string, TrendPoint[]>;
+  wow: Record<string, number>;
   alertMessage: string | null;
   suggestion: Suggestion | null;
   totalSubmissions: number;
@@ -104,24 +106,43 @@ export function VenueInsights({
       <PeriodPicker period={period} />
 
       <div className="mb-5 grid grid-cols-2 gap-2.5">
-        {aspectAverages.map((a) => (
-          <button
-            key={a.key}
-            onClick={() => setSelectedAspect(a.key)}
-            className="rounded-xl border-2 bg-paper p-3.5 text-left"
-            style={{ borderColor: activeAspect?.key === a.key ? "var(--color-violet)" : "transparent" }}
-          >
-            <div className="mb-1 text-xs text-slate">
-              {a.icon} {a.label}
-            </div>
-            <div
-              className="text-xl font-bold tracking-tight"
-              style={{ color: a.avg !== null && a.avg < 6.5 ? "var(--color-magenta)" : "var(--color-ink)" }}
+        {aspectAverages.map((a) => {
+          const delta = wow[a.key];
+          return (
+            <button
+              key={a.key}
+              onClick={() => setSelectedAspect(a.key)}
+              className="rounded-xl border-2 bg-paper p-3.5 text-left"
+              style={{ borderColor: activeAspect?.key === a.key ? "var(--color-violet)" : "transparent" }}
             >
-              {a.avg !== null ? a.avg.toFixed(1) : "—"}
-            </div>
-          </button>
-        ))}
+              <div className="mb-1 text-xs text-slate">
+                {a.icon} {a.label}
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <div
+                  className="text-xl font-bold tracking-tight"
+                  style={{ color: a.avg !== null && a.avg < 6.5 ? "var(--color-magenta)" : "var(--color-ink)" }}
+                >
+                  {a.avg !== null ? a.avg.toFixed(1) : "—"}
+                </div>
+                {/* Fixed 7-vs-previous-7-days comparison, independent of the
+                    period picker above (src/lib/dashboard/wow.ts). Omitted
+                    entirely rather than shown as "0.0" when there isn't
+                    enough data in both weeks, or when the two weeks tie
+                    exactly — an arrow implies a real move either way. */}
+                {delta !== undefined && delta !== 0 && (
+                  <span
+                    className="text-xs font-bold"
+                    style={{ color: delta > 0 ? "#0F6E48" : "#A32C15" }}
+                    title="Változás az előző héthez képest"
+                  >
+                    {delta > 0 ? "↑" : "↓"} {Math.abs(delta).toFixed(1)}
+                  </span>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {alertMessage && (

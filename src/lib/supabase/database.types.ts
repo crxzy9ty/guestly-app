@@ -301,6 +301,19 @@ export interface Database {
         Args: { target_partner_id: string; since_days: number | null };
         Returns: { aspect_key: string; avg_score: number; score_count: number }[];
       };
+      // Week-over-week: last 7 days vs. the 7 days before, fixed regardless
+      // of the period picker. Powers the up/down arrow next to each aspect
+      // tile (src/lib/dashboard/wow.ts).
+      partner_aspect_stats_wow: {
+        Args: { target_partner_id: string };
+        Returns: {
+          aspect_key: string;
+          current_avg: number | null;
+          previous_avg: number | null;
+          current_count: number;
+          previous_count: number;
+        }[];
+      };
       partner_heatmap_stats_range: {
         Args: { target_partner_id: string; since_days: number | null };
         Returns: {

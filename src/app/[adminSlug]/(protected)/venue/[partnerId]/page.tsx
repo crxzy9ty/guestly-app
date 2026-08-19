@@ -12,6 +12,7 @@ import {
 import { trendSeriesByAspect, type TrendBucketRow } from "@/lib/dashboard/trend";
 import { parsePeriod, periodDays, periodLabel } from "@/lib/dashboard/period";
 import { actionSuggestion, type Suggestion } from "@/lib/dashboard/suggestions";
+import { wowDeltas } from "@/lib/dashboard/wow";
 
 // Admin view of a single venue, showing exactly what that venue's owner sees
 // on their own dashboard (same VenueInsights component, same aggregate views).
@@ -42,7 +43,7 @@ export default async function AdminVenueDetailPage({
     notFound();
   }
 
-  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: trendRows }] =
+  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: trendRows }, { data: wowRows }] =
     await Promise.all([
       supabase
         .from("question_aspects")
@@ -64,10 +65,12 @@ export default async function AdminVenueDetailPage({
         target_partner_id: partner.id,
         since_days: sinceDays,
       }),
+      supabase.rpc("partner_aspect_stats_wow", { target_partner_id: partner.id }),
     ]);
 
   const safeAspects = aspects ?? [];
   const aspectAverages = joinAspectAverages(safeAspects, aspectStats ?? []);
+  const wow = wowDeltas(wowRows ?? []);
   const hours = hourBucketsFor(partner.open_hour, partner.close_hour);
   const grids = gridsByAspect(
     safeAspects.map((a) => a.key),
@@ -134,6 +137,7 @@ export default async function AdminVenueDetailPage({
         grids={grids}
         hours={hours}
         trendSeries={trendSeries}
+        wow={wow}
         suggestion={suggestion}
         alertMessage={alertMessage}
         totalSubmissions={totalSubmissions}

@@ -9,6 +9,7 @@ import { gridsByAspect, hourBucketsFor, joinAspectAverages, weakestBucket, type 
 import { actionSuggestion, type Suggestion } from "@/lib/dashboard/suggestions";
 import { trendSeriesByAspect, type TrendBucketRow } from "@/lib/dashboard/trend";
 import { parsePeriod, periodDays } from "@/lib/dashboard/period";
+import { wowDeltas } from "@/lib/dashboard/wow";
 
 // How many recent submissions the Napló shows. Bounded on purpose: this is the
 // one query here that returns row-level data rather than aggregates, and
@@ -82,7 +83,7 @@ export default async function DashboardPage({
   // supabase/migrations/..._aggregate_stats_views.sql) and the log is capped, so
   // none of this scales with the number of reviews the way the previous
   // fetch-everything-and-average-in-JS version did.
-  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: trendRows }, { data: logs }] =
+  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: trendRows }, { data: logs }, { data: wowRows }] =
     await Promise.all([
       supabase
         .from("question_aspects")
@@ -113,10 +114,14 @@ export default async function DashboardPage({
         .eq("partner_id", selected.id)
         .order("created_at", { ascending: false })
         .limit(LOG_ROW_LIMIT),
+      // Fixed 7-vs-7-days-before comparison, independent of the period
+      // picker above — see supabase/migrations/20260819150000_partner_aspect_wow.sql.
+      supabase.rpc("partner_aspect_stats_wow", { target_partner_id: selected.id }),
     ]);
 
   const safeAspects = aspects ?? [];
   const aspectAverages = joinAspectAverages(safeAspects, aspectStats ?? []);
+  const wow = wowDeltas(wowRows ?? []);
   const hours = hourBucketsFor(selected.open_hour, selected.close_hour);
   const grids = gridsByAspect(
     safeAspects.map((a) => a.key),
@@ -175,6 +180,7 @@ export default async function DashboardPage({
         grids={grids}
         hours={hours}
         trendSeries={trendSeries}
+        wow={wow}
         alertMessage={alertMessage}
         suggestion={suggestion}
         totalSubmissions={totalSubmissions}

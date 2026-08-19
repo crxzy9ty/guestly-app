@@ -10,6 +10,10 @@ export const ownerHelpFaqs: HelpFaq[] = [
     a: "A Trend a kiválasztott szempont értékeléseit időrendben mutatja, hogy lásd, javul vagy romlik-e az adott terület a kiválasztott időszakban. Az alatta lévő Hőtérkép azt mutatja meg, mikor (melyik nap, melyik napszak) gyengébb ugyanez a szempont — ez segít eldönteni, mikor kell erősíteni a személyzetet. A kettő egymás alatt látszik, nem kell köztük váltani.",
   },
   {
+    q: "Mit jelent a szempont-csempéken a nyíl és a szám (pl. ↑ 0.3)?",
+    a: "Azt mutatja, hogyan változott az adott szempont átlaga az elmúlt 7 napban az azt megelőző 7 naphoz képest — függetlenül attól, milyen időszakot választottál ki fent. Zöld felfelé nyíl javulást, piros lefelé nyíl romlást jelent. Ha nincs elég adat mindkét héthez, vagy nincs érdemi változás, nem jelenik meg semmi.",
+  },
+  {
     q: "Miért mutat figyelmeztetést a rendszer?",
     a: "Ha egy szempont átlaga a partneredhez beállított riasztási küszöb alá esik, a rendszer automatikusan kiemeli — a konkrét nap+óra megjelölésével, ha van rá elég adat —, hogy időben tudj reagálni, például extra személyzetet beosztani egy forgalmas időszakra.",
   },
@@ -75,6 +79,10 @@ export const adminHelpFaqs: HelpFaq[] = [
   {
     q: "Mit jelent a figyelmeztetés alatti \"Javaslat\" doboz egy egység nézeténél?",
     a: "Egy előre megírt, gyakorlati ötlet a gyengébb nap+óra kombinációhoz — nem AI generálja, egy pár kész szövegből választ ki egyet konzisztensen, mindig ugyanazt ugyanahhoz a helyzethez. A mellette lévő színes címke egy fix, minden partnernél ugyanazt jelentő 1-10 skálán mutatja a súlyosságot, függetlenül attól, az adott partnernek milyen riasztási küszöbe van beállítva. Ha egy partner rákérdez, nyugodtan mondd, hogy ez egy sablon-tanács, nem a rendszer által \"kiszámolt\" megoldás.",
+  },
+  {
+    q: "Mit jelent a szempont-csempéken egy egység nézeténél a nyíl és a szám?",
+    a: "Az elmúlt 7 nap átlagát hasonlítja az azt megelőző 7 naphoz — mindig ez a fix ablak, függetlenül a fent kiválasztott időszaktól. Zöld felfelé nyíl javulást, piros lefelé nyíl romlást jelent; ha nincs elég adat mindkét héthez, nem jelenik meg semmi.",
   },
   {
     q: "Miért 8-20 óráig mutatja a hőtérkép egy éjszaka nyitva tartó helynél?",
