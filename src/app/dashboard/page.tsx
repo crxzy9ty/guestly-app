@@ -185,11 +185,17 @@ export default async function DashboardPage({
   );
 }
 
-// Two rows on purpose: the top row (logo + label + the two action links) is
-// the part that must never wrap or collide, so it only ever holds short,
-// fixed-length content. The email — arbitrary length, not under our control —
-// gets its own row underneath, where it can be as long as it needs to be
-// without threatening the row above it.
+// Two rows: the top one (logo + label + the account menu trigger) must never
+// wrap or collide, so it only ever holds short, fixed-length content. The
+// email — arbitrary length, not under our control — gets its own row
+// underneath, where it can be as long as it needs to be without threatening
+// the row above it.
+//
+// Kijelentkezés/Jelszó módosítása moved behind a menu on request — they used
+// to sit in the open as plain text links, which is an easy misclick target
+// (especially "Kijelentkezés" right next to other taps) for something that
+// costly to hit by accident. A native <details>/<summary> gives a click-to-
+// open menu with zero extra JS/dependencies.
 function Header({ email }: { email: string | undefined }) {
   return (
     <div className="mb-4">
@@ -199,16 +205,34 @@ function Header({ email }: { email: string | undefined }) {
           <span className="text-sm font-bold tracking-tight text-ink">Fydback</span>
           <span className="text-xs font-bold uppercase tracking-[0.2em] text-violet">Partneri nézet</span>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <Link href="/set-password" className="whitespace-nowrap text-sm font-semibold text-slate hover:text-ink">
-            Jelszó módosítása
-          </Link>
-          <form action={signOutOwner}>
-            <button type="submit" className="whitespace-nowrap text-sm font-semibold text-slate hover:text-ink">
-              Kijelentkezés
-            </button>
-          </form>
-        </div>
+        <details className="relative shrink-0">
+          <summary
+            aria-label="Fiók menü"
+            className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full bg-mist text-slate [&::-webkit-details-marker]:hidden"
+          >
+            <span className="flex gap-[3px]">
+              <span className="h-1 w-1 rounded-full bg-current" />
+              <span className="h-1 w-1 rounded-full bg-current" />
+              <span className="h-1 w-1 rounded-full bg-current" />
+            </span>
+          </summary>
+          <div className="absolute right-0 z-20 mt-1.5 w-52 rounded-xl border border-line bg-paper p-1.5 shadow-lg">
+            <Link
+              href="/set-password"
+              className="block rounded-lg px-2.5 py-2 text-sm font-semibold text-ink hover:bg-mist"
+            >
+              Jelszó módosítása
+            </Link>
+            <form action={signOutOwner}>
+              <button
+                type="submit"
+                className="block w-full rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-ink hover:bg-mist"
+              >
+                Kijelentkezés
+              </button>
+            </form>
+          </div>
+        </details>
       </div>
       <div className="mt-1 truncate text-xs text-slate">{email}</div>
     </div>
