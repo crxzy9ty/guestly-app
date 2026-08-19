@@ -3,7 +3,10 @@ import type { TrendPoint } from "@/lib/dashboard/trend";
 
 const WIDTH = 600;
 const HEIGHT = 160;
-const PAD_X = 12;
+// Asymmetric on purpose: the left side needs room for the 1–10 axis labels,
+// the right side only ever holds the plot line and a right-anchored date.
+const PAD_LEFT = 22;
+const PAD_RIGHT = 12;
 const PAD_TOP = 12;
 const PAD_BOTTOM = 22;
 
@@ -28,9 +31,9 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
     );
   }
 
-  const plotWidth = WIDTH - PAD_X * 2;
+  const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
   const step = points.length > 1 ? plotWidth / (points.length - 1) : 0;
-  const xAt = (i: number) => PAD_X + i * step;
+  const xAt = (i: number) => PAD_LEFT + i * step;
 
   const path = points
     .map((p, i) => `${i === 0 ? "M" : "L"} ${xAt(i).toFixed(1)} ${scoreToY(p.avg).toFixed(1)}`)
@@ -51,6 +54,31 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
         role="img"
         aria-label="Trend grafikon"
       >
+        {/* 1–10 axis reference on the left, matching the fixed scale the dots
+            are colored against — without it the line's shape has no fixed
+            frame, only the date labels below it. */}
+        <line
+          x1={PAD_LEFT}
+          y1={scoreToY(MAX_SCORE)}
+          x2={WIDTH - PAD_RIGHT}
+          y2={scoreToY(MAX_SCORE)}
+          stroke="var(--color-line)"
+          strokeWidth={1}
+        />
+        <line
+          x1={PAD_LEFT}
+          y1={scoreToY(MIN_SCORE)}
+          x2={WIDTH - PAD_RIGHT}
+          y2={scoreToY(MIN_SCORE)}
+          stroke="var(--color-line)"
+          strokeWidth={1}
+        />
+        <text x={PAD_LEFT - 5} y={scoreToY(MAX_SCORE) + 3} textAnchor="end" fontSize={9} fill="var(--color-slate)">
+          10
+        </text>
+        <text x={PAD_LEFT - 5} y={scoreToY(MIN_SCORE) + 3} textAnchor="end" fontSize={9} fill="var(--color-slate)">
+          1
+        </text>
         {points.length > 1 && <path d={path} fill="none" stroke="var(--color-violet)" strokeWidth={2} />}
         {points.map((p, i) => {
           // The first/last labels used to be centered on their point (like
