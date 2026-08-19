@@ -19,6 +19,17 @@ function fields(formData: FormData) {
   const subscriptionStart = str("subscription_start");
   const subscriptionEnd = str("subscription_end");
 
+  // Same empty-string-to-null handling as the dates above. NULL is also the
+  // meaningful "use the 8-20 heatmap default" state (src/lib/dashboard/heatmap.ts).
+  const hour = (key: string) => {
+    const raw = str(key);
+    if (raw === null) return null;
+    const n = parseInt(raw, 10);
+    return Number.isInteger(n) && n >= 0 && n <= 23 ? n : null;
+  };
+  const openHour = hour("open_hour");
+  const closeHour = hour("close_hour");
+
   return {
     name: String(formData.get("name") ?? "").trim(),
     address: str("address"),
@@ -29,6 +40,8 @@ function fields(formData: FormData) {
     alert_threshold: alertThreshold,
     subscription_start: subscriptionStart,
     subscription_end: subscriptionEnd,
+    open_hour: openHour,
+    close_hour: closeHour,
   };
 }
 
@@ -38,6 +51,16 @@ function fields(formData: FormData) {
 function periodError(data: ReturnType<typeof fields>): string | null {
   if (data.subscription_start && data.subscription_end && data.subscription_end < data.subscription_start) {
     return "Az előfizetés vége nem lehet korábbi, mint a kezdete.";
+  }
+  return null;
+}
+
+// The DB rejects "only one of the two set" with a check constraint, but that
+// would surface as a generic "Nem sikerült elmenteni" — catching it here
+// gives a specific, actionable message instead.
+function hoursError(data: ReturnType<typeof fields>): string | null {
+  if ((data.open_hour === null) !== (data.close_hour === null)) {
+    return "A nyitás és zárás óráját együtt add meg, vagy hagyd mindkettőt üresen.";
   }
   return null;
 }
@@ -54,6 +77,8 @@ export async function createPartner(adminSlug: string, formData: FormData): Prom
 
   const periodProblem = periodError(data);
   if (periodProblem) return { error: periodProblem };
+  const hoursProblem = hoursError(data);
+  if (hoursProblem) return { error: hoursProblem };
 
   const supabase = await createClient();
   const { error } = await supabase.from("partners").insert(data);
@@ -73,6 +98,8 @@ export async function updatePartner(
 
   const periodProblem = periodError(data);
   if (periodProblem) return { error: periodProblem };
+  const hoursProblem = hoursError(data);
+  if (hoursProblem) return { error: hoursProblem };
 
   const supabase = await createClient();
   const { error } = await supabase.from("partners").update(data).eq("id", partnerId);

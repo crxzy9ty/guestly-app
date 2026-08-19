@@ -13,7 +13,7 @@ export default async function AdminPartnersPage({
     supabase
       .from("partners")
       .select(
-        "id, name, address, phone, email, contact_name, contact_phone, alert_threshold, subscription_start, subscription_end",
+        "id, name, address, phone, email, contact_name, contact_phone, alert_threshold, subscription_start, subscription_end, open_hour, close_hour",
       )
       .order("name"),
     supabase

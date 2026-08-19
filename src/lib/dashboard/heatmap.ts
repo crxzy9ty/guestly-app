@@ -5,14 +5,35 @@
 // max_rows = 1000; this file deliberately no longer knows how to bucket a
 // timestamp, so there is only one implementation of that rule.
 
-export const HOURS = [8, 10, 12, 14, 16, 18, 20] as const;
 export const DAYS = ["Hét", "Ked", "Sze", "Csüt", "Pén", "Szo", "Vas"] as const;
+
+// A partner with no opening hours set renders exactly this — matches the
+// fixed range every partner had before opening hours existed.
+export const DEFAULT_OPEN_HOUR = 8;
+export const DEFAULT_CLOSE_HOUR = 20;
+
+// Which hour columns to render for a partner, given their own opening hours
+// (or the defaults above if unset). This has to generate the EXACT same list
+// public.partner_hour_bucket() buckets reviews into
+// (supabase/migrations/20260819120000_partner_opening_hours.sql) — 2-hour
+// steps from open_hour up to and including close_hour, wrapping past
+// midnight when close_hour <= open_hour (the overnight case, e.g. 18 -> 2).
+// This function only decides which columns exist; it does no timestamp math,
+// so it stays fine to run client-side unlike the actual per-review bucketing.
+export function hourBucketsFor(openHour: number | null, closeHour: number | null): number[] {
+  const open = openHour ?? DEFAULT_OPEN_HOUR;
+  const close = closeHour ?? DEFAULT_CLOSE_HOUR;
+  const span = close > open ? close - open : 24 - open + close;
+  const steps = Math.floor(span / 2);
+  return Array.from({ length: steps + 1 }, (_, i) => (open + i * 2) % 24);
+}
 
 export type HeatmapCell = { avg: number; count: number } | null;
 export type HeatmapGrid = HeatmapCell[][]; // [dayIndex][hourIndex]
 
-// One row of public.partner_heatmap_stats. day_index is 0-6 (Mon-Sun) and
-// hour_bucket is already snapped to one of HOURS by the database.
+// One row of public.partner_heatmap_stats_range. day_index is 0-6 (Mon-Sun)
+// and hour_bucket is already snapped to one of this partner's own hours
+// (hourBucketsFor) by the database.
 export type HeatmapBucketRow = {
   aspect_key: string;
   day_index: number;
@@ -21,15 +42,15 @@ export type HeatmapBucketRow = {
   score_count: number;
 };
 
-// Scatters pre-aggregated buckets into the fixed DAYS x HOURS matrix the
-// Heatmap component renders. Rows outside the grid (a day_index or hour_bucket
-// the view somehow produced that this build doesn't display) are skipped rather
-// than crashing on an out-of-range index.
-export function gridFromBuckets(rows: HeatmapBucketRow[]): HeatmapGrid {
-  const grid: HeatmapGrid = DAYS.map(() => HOURS.map(() => null));
+// Scatters pre-aggregated buckets into a DAYS x hours matrix the Heatmap
+// component renders. Rows outside the grid (a day_index or hour_bucket the
+// database somehow produced that isn't in `hours`) are skipped rather than
+// crashing on an out-of-range index.
+export function gridFromBuckets(rows: HeatmapBucketRow[], hours: number[]): HeatmapGrid {
+  const grid: HeatmapGrid = DAYS.map(() => hours.map(() => null));
 
   for (const row of rows) {
-    const hourIndex = HOURS.indexOf(row.hour_bucket as (typeof HOURS)[number]);
+    const hourIndex = hours.indexOf(row.hour_bucket);
     if (hourIndex === -1) continue;
     if (row.day_index < 0 || row.day_index >= DAYS.length) continue;
     grid[row.day_index][hourIndex] = { avg: row.avg_score, count: Number(row.score_count) };
@@ -40,9 +61,13 @@ export function gridFromBuckets(rows: HeatmapBucketRow[]): HeatmapGrid {
 
 // Groups bucket rows by aspect and builds one grid per aspect key, so the
 // dashboard can hand the selected aspect's grid straight to <Heatmap>.
-export function gridsByAspect(aspectKeys: string[], rows: HeatmapBucketRow[]): Record<string, HeatmapGrid> {
+export function gridsByAspect(
+  aspectKeys: string[],
+  rows: HeatmapBucketRow[],
+  hours: number[],
+): Record<string, HeatmapGrid> {
   return Object.fromEntries(
-    aspectKeys.map((key) => [key, gridFromBuckets(rows.filter((r) => r.aspect_key === key))]),
+    aspectKeys.map((key) => [key, gridFromBuckets(rows.filter((r) => r.aspect_key === key), hours)]),
   );
 }
 
@@ -110,12 +135,12 @@ export function joinAspectAverages(
 // Ked 14h körül") when it's really one data point.
 const MIN_SAMPLE_SIZE = 3;
 
-export function weakestBucket(grid: HeatmapGrid): { day: string; hour: number; avg: number } | null {
+export function weakestBucket(grid: HeatmapGrid, hours: number[]): { day: string; hour: number; avg: number } | null {
   let best: { day: string; hour: number; avg: number } | null = null;
   grid.forEach((row, di) => {
     row.forEach((cell, hi) => {
       if (cell && cell.count >= MIN_SAMPLE_SIZE && (!best || cell.avg < best.avg)) {
-        best = { day: DAYS[di], hour: HOURS[hi], avg: cell.avg };
+        best = { day: DAYS[di], hour: hours[hi], avg: cell.avg };
       }
     });
   });

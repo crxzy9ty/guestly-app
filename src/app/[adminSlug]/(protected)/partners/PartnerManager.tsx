@@ -20,6 +20,8 @@ export type Partner = {
   alert_threshold: number;
   subscription_start: string | null;
   subscription_end: string | null;
+  open_hour: number | null;
+  close_hour: number | null;
   // Engagement, from public.partner_activity. Read-only here.
   lastOwnerSeenAt: string | null;
   lastReviewAt: string | null;
@@ -117,6 +119,36 @@ function PartnerFields({ defaults }: { defaults?: Partial<Partner> }) {
           Ha egy szempont átlaga ez alá esik, az egység megjelenik a &quot;Figyelendő egységek&quot; listában.
         </p>
       </div>
+      <div className="grid grid-cols-2 gap-2.5">
+        <div>
+          <label className={labelClass}>Nyitás órája</label>
+          <input
+            name="open_hour"
+            type="number"
+            min={0}
+            max={23}
+            defaultValue={defaults?.open_hour ?? ""}
+            placeholder="8"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Zárás órája</label>
+          <input
+            name="close_hour"
+            type="number"
+            min={0}
+            max={23}
+            defaultValue={defaults?.close_hour ?? ""}
+            placeholder="20"
+            className={inputClass}
+          />
+        </div>
+      </div>
+      <p className="-mt-1 text-[11px] leading-relaxed text-slate">
+        Mindkettő opcionális — üresen hagyva a hőtérkép 8-20 óráig mutatja az adatokat. Ha éjfél után zár, pl.
+        18 és 2, azt is helyesen kezeli.
+      </p>
     </div>
   );
 }

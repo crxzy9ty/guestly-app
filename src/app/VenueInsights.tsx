@@ -56,6 +56,7 @@ function PeriodPicker({ period }: { period: PeriodValue }) {
 export function VenueInsights({
   aspectAverages,
   grids,
+  hours,
   trendSeries,
   alertMessage,
   totalSubmissions,
@@ -63,6 +64,7 @@ export function VenueInsights({
 }: {
   aspectAverages: AspectAverage[];
   grids: Record<string, HeatmapGrid>;
+  hours: number[];
   trendSeries: Record<string, TrendPoint[]>;
   alertMessage: string | null;
   totalSubmissions: number;
@@ -147,7 +149,7 @@ export function VenueInsights({
             A kiválasztott időszak értékelései hétköznap és napszak szerint összesítve.
           </div>
         </div>
-        <Heatmap grid={(activeAspect && grids[activeAspect.key]) ?? []} />
+        <Heatmap grid={(activeAspect && grids[activeAspect.key]) ?? []} hours={hours} />
       </div>
     </>
   );

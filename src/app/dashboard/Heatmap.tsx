@@ -1,23 +1,23 @@
-import { DAYS, HOURS, heatColor, type HeatmapGrid } from "@/lib/dashboard/heatmap";
+import { DAYS, heatColor, type HeatmapGrid } from "@/lib/dashboard/heatmap";
 
-export function Heatmap({ grid }: { grid: HeatmapGrid }) {
+export function Heatmap({ grid, hours }: { grid: HeatmapGrid; hours: number[] }) {
   return (
     <div>
-      <div className="mb-1.5 grid gap-[3px]" style={{ gridTemplateColumns: `44px repeat(${HOURS.length}, 1fr)` }}>
+      <div className="mb-1.5 grid gap-[3px]" style={{ gridTemplateColumns: `44px repeat(${hours.length}, 1fr)` }}>
         <div />
-        {HOURS.map((h) => (
+        {hours.map((h) => (
           <div key={h} className="text-center text-[10px] text-slate">
             {h}h
           </div>
         ))}
       </div>
       {DAYS.map((d, di) => (
-        <div key={d} className="mb-[3px] grid gap-[3px]" style={{ gridTemplateColumns: `44px repeat(${HOURS.length}, 1fr)` }}>
+        <div key={d} className="mb-[3px] grid gap-[3px]" style={{ gridTemplateColumns: `44px repeat(${hours.length}, 1fr)` }}>
           <div className="flex items-center text-[11px] text-slate">{d}</div>
           {(grid[di] ?? []).map((cell, hi) => (
             <div
               key={hi}
-              title={cell ? `${d} ${HOURS[hi]}h: ${cell.avg.toFixed(1)} (${cell.count} értékelés)` : `${d} ${HOURS[hi]}h: nincs adat`}
+              title={cell ? `${d} ${hours[hi]}h: ${cell.avg.toFixed(1)} (${cell.count} értékelés)` : `${d} ${hours[hi]}h: nincs adat`}
               className="flex aspect-square items-center justify-center rounded text-[9px] font-bold"
               style={{
                 background: cell ? heatColor(cell.avg) : "var(--color-mist)",

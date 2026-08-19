@@ -44,6 +44,11 @@ export interface Database {
           // stored, so it can't drift out of sync with these dates.
           subscription_start: string | null;
           subscription_end: string | null;
+          // Both null or both set (DB constraint). Null = heatmap defaults to
+          // the fixed 8-20 range (src/lib/dashboard/heatmap.ts). close_hour <
+          // open_hour means the venue is open overnight (e.g. 18 -> 2).
+          open_hour: number | null;
+          close_hour: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -267,6 +272,14 @@ export interface Database {
       };
       guestly_hour_bucket: {
         Args: { h: number };
+        Returns: number;
+      };
+      // Parameterized version of guestly_hour_bucket, bucketing against a
+      // partner's own open_hour/close_hour instead of the fixed range. Not
+      // called directly from TS — partner_heatmap_stats_range uses it
+      // internally — kept here for completeness.
+      partner_hour_bucket: {
+        Args: { h: number; open_hour: number; close_hour: number };
         Returns: number;
       };
       // Stamps the CALLER's own profiles.last_seen_at, throttled to once per

@@ -12,6 +12,7 @@ import type { TrendPoint } from "@/lib/dashboard/trend";
 export function OwnerDashboardClient({
   aspectAverages,
   grids,
+  hours,
   trendSeries,
   alertMessage,
   totalSubmissions,
@@ -21,6 +22,7 @@ export function OwnerDashboardClient({
 }: {
   aspectAverages: AspectAverage[];
   grids: Record<string, HeatmapGrid>;
+  hours: number[];
   trendSeries: Record<string, TrendPoint[]>;
   alertMessage: string | null;
   totalSubmissions: number;
@@ -69,6 +71,7 @@ export function OwnerDashboardClient({
           period={period}
           aspectAverages={aspectAverages}
           grids={grids}
+          hours={hours}
           trendSeries={trendSeries}
           alertMessage={alertMessage}
           totalSubmissions={totalSubmissions}

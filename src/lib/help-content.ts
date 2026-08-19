@@ -3,7 +3,7 @@ export type HelpFaq = { q: string; a: string };
 export const ownerHelpFaqs: HelpFaq[] = [
   {
     q: "Mit jelent az Áttekintés fülön a hőtérkép?",
-    a: "Minden cella egy adott nap egy adott óráját mutatja, 1-10 skálán. Minél zöldebb egy cella, annál jobb az átlag; a magenta/rózsaszín cellák gyengébb eredményt jeleznek. Az üres, szaggatott keretű cellákhoz még nem érkezett elég értékelés.",
+    a: "Minden cella egy adott nap egy adott óráját mutatja, 1-10 skálán. Minél zöldebb egy cella, annál jobb az átlag; a magenta/rózsaszín cellák gyengébb eredményt jeleznek. Az üres, szaggatott keretű cellákhoz még nem érkezett elég értékelés. Az órák a te nyitvatartásodhoz igazodnak, ha az admin beállította azt — ha nem, alapból 8-20 óráig mutatja.",
   },
   {
     q: "Mi a különbség a Trend és a Hőtérkép nézet között?",
@@ -67,6 +67,10 @@ export const adminHelpFaqs: HelpFaq[] = [
   {
     q: "Hogyan állítom be, mikor jelezzen riasztást a rendszer?",
     a: "A Partnerek fülön, egy egység szerkesztésekor a \"Riasztási küszöb\" mezőben partnerenként külön beállítható — ez alapból 6.5, de igazíthatod az adott hely elvárásaihoz.",
+  },
+  {
+    q: "Miért 8-20 óráig mutatja a hőtérkép egy éjszaka nyitva tartó helynél?",
+    a: "Mert nincs beállítva a nyitvatartása. A Partnerek fülön, az egység szerkesztésekor add meg a \"Nyitás órája\" és \"Zárás órája\" mezőket (pl. 18 és 2, ha éjfél után zár) — ezután a hőtérkép a partner saját órái szerinti oszlopokat mutatja, nem az alapértelmezett 8-20-at. Mindkét mezőt együtt kell megadni, vagy hagyd mindkettőt üresen.",
   },
   {
     q: "Mire jók a kérdéscsoportok?",

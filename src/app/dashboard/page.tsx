@@ -5,7 +5,7 @@ import { signOutOwner } from "@/app/actions/auth";
 import { VenueSwitcher } from "./VenueSwitcher";
 import { OwnerDashboardClient } from "./OwnerDashboardClient";
 import type { LogRow } from "./LogTable";
-import { gridsByAspect, joinAspectAverages, weakestBucket, type HeatmapBucketRow } from "@/lib/dashboard/heatmap";
+import { gridsByAspect, hourBucketsFor, joinAspectAverages, weakestBucket, type HeatmapBucketRow } from "@/lib/dashboard/heatmap";
 import { trendSeriesByAspect, type TrendBucketRow } from "@/lib/dashboard/trend";
 import { parsePeriod, periodDays } from "@/lib/dashboard/period";
 
@@ -14,7 +14,14 @@ import { parsePeriod, periodDays } from "@/lib/dashboard/period";
 // PostgREST silently truncates at max_rows = 1000 (supabase/config.toml).
 const LOG_ROW_LIMIT = 300;
 
-type PartnerRow = { id: string; name: string; question_set_id: string | null; alert_threshold: number };
+type PartnerRow = {
+  id: string;
+  name: string;
+  question_set_id: string | null;
+  alert_threshold: number;
+  open_hour: number | null;
+  close_hour: number | null;
+};
 
 export default async function DashboardPage({
   searchParams,
@@ -47,7 +54,7 @@ export default async function DashboardPage({
   const [{ data: memberships }] = await Promise.all([
     supabase
       .from("partner_members")
-      .select("partners(id, name, question_set_id, alert_threshold)")
+      .select("partners(id, name, question_set_id, alert_threshold, open_hour, close_hour)")
       .eq("user_id", user.id),
     supabase.rpc("touch_last_seen"),
   ]);
@@ -109,9 +116,11 @@ export default async function DashboardPage({
 
   const safeAspects = aspects ?? [];
   const aspectAverages = joinAspectAverages(safeAspects, aspectStats ?? []);
+  const hours = hourBucketsFor(selected.open_hour, selected.close_hour);
   const grids = gridsByAspect(
     safeAspects.map((a) => a.key),
     (heatmapRows ?? []) as HeatmapBucketRow[],
+    hours,
   );
   const trendSeries = trendSeriesByAspect(
     safeAspects.map((a) => a.key),
@@ -127,7 +136,7 @@ export default async function DashboardPage({
     const withData = aspectAverages.filter((a) => a.avg !== null);
     const weakest = withData.sort((a, b) => a.avg! - b.avg!)[0];
     if (weakest && weakest.avg! < selected.alert_threshold) {
-      const bucket = weakestBucket(grids[weakest.key] ?? []);
+      const bucket = weakestBucket(grids[weakest.key] ?? [], hours);
       alertMessage = bucket
         ? `${weakest.label} gyengébb ${bucket.day} ${bucket.hour}h körül (átlag: ${bucket.avg.toFixed(1)}) — érdemes ilyenkor erősíteni a személyzetet.`
         : `${weakest.label} átlaga jelenleg ${weakest.avg!.toFixed(1)}, a ${selected.alert_threshold} alatti figyelmeztetési küszöb alatt.`;
@@ -156,6 +165,7 @@ export default async function DashboardPage({
         period={period}
         aspectAverages={aspectAverages}
         grids={grids}
+        hours={hours}
         trendSeries={trendSeries}
         alertMessage={alertMessage}
         totalSubmissions={totalSubmissions}

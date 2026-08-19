@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { VenueInsights } from "@/app/VenueInsights";
 import {
   gridsByAspect,
+  hourBucketsFor,
   joinAspectAverages,
   weakestBucket,
   type HeatmapBucketRow,
@@ -32,7 +33,7 @@ export default async function AdminVenueDetailPage({
 
   const { data: partner } = await supabase
     .from("partners")
-    .select("id, name, address, question_set_id, alert_threshold")
+    .select("id, name, address, question_set_id, alert_threshold, open_hour, close_hour")
     .eq("id", partnerId)
     .maybeSingle();
 
@@ -66,9 +67,11 @@ export default async function AdminVenueDetailPage({
 
   const safeAspects = aspects ?? [];
   const aspectAverages = joinAspectAverages(safeAspects, aspectStats ?? []);
+  const hours = hourBucketsFor(partner.open_hour, partner.close_hour);
   const grids = gridsByAspect(
     safeAspects.map((a) => a.key),
     (heatmapRows ?? []) as HeatmapBucketRow[],
+    hours,
   );
   const trendSeries = trendSeriesByAspect(
     safeAspects.map((a) => a.key),
@@ -83,7 +86,7 @@ export default async function AdminVenueDetailPage({
     const withData = aspectAverages.filter((a) => a.avg !== null);
     const weakest = withData.sort((a, b) => a.avg! - b.avg!)[0];
     if (weakest && weakest.avg! < partner.alert_threshold) {
-      const bucket = weakestBucket(grids[weakest.key] ?? []);
+      const bucket = weakestBucket(grids[weakest.key] ?? [], hours);
       alertMessage = bucket
         ? `${weakest.label} gyengébb ${bucket.day} ${bucket.hour}h körül (átlag: ${bucket.avg.toFixed(1)}) — érdemes ilyenkor erősíteni a személyzetet.`
         : `${weakest.label} átlaga jelenleg ${weakest.avg!.toFixed(1)}, a ${partner.alert_threshold} alatti figyelmeztetési küszöb alatt.`;
@@ -124,6 +127,7 @@ export default async function AdminVenueDetailPage({
         period={period}
         aspectAverages={aspectAverages}
         grids={grids}
+        hours={hours}
         trendSeries={trendSeries}
         alertMessage={alertMessage}
         totalSubmissions={totalSubmissions}
