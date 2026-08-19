@@ -31,7 +31,12 @@ function hashKey(key: string): number {
   return Math.abs(h);
 }
 
-export function actionSuggestion(aspectKey: string, aspectLabel: string, day: string, hour: number): string {
+// `avg` rides along so the caller can render a severity badge (see
+// src/lib/dashboard/severity.ts) next to the text without a second prop that
+// could get out of sync with which suggestion is actually showing.
+export type Suggestion = { text: string; avg: number };
+
+export function actionSuggestion(aspectKey: string, aspectLabel: string, day: string, hour: number, avg: number): Suggestion {
   const idx = hashKey(`${aspectKey}|${day}|${hour}`) % TEMPLATES.length;
-  return TEMPLATES[idx]({ aspect: aspectLabel, day, hour });
+  return { text: TEMPLATES[idx]({ aspect: aspectLabel, day, hour }), avg };
 }

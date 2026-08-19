@@ -15,7 +15,7 @@ export const ownerHelpFaqs: HelpFaq[] = [
   },
   {
     q: "Mit jelent a figyelmeztetés alatti \"Javaslat\" doboz?",
-    a: "Egy előre megírt, gyakorlati ötlet, ami a gyengébb nap+óra kombinációhoz kapcsolódik — nem mesterséges intelligencia generálja, hanem egy pár kész szövegből választ ki egyet, mindig ugyanazt ugyanahhoz a helyzethez. Tekintsd tanácsnak, nem mért adatnak; a döntés mindig a tiéd.",
+    a: "Egy előre megírt, gyakorlati ötlet, ami a gyengébb nap+óra kombinációhoz kapcsolódik — nem mesterséges intelligencia generálja, hanem egy pár kész szövegből választ ki egyet, mindig ugyanazt ugyanahhoz a helyzethez. A mellette lévő színes címke (pl. \"Gyenge\", \"Kritikus\") egy fix 1-10 skálán mutatja, mennyire rossz a pontszám — ez független attól, milyen riasztási küszöböt állítottál be, tehát mindig ugyanazt jelenti. Tekintsd tanácsnak, nem mért adatnak; a döntés mindig a tiéd.",
   },
   {
     q: "Mit látok a Napló fülön?",
@@ -74,7 +74,7 @@ export const adminHelpFaqs: HelpFaq[] = [
   },
   {
     q: "Mit jelent a figyelmeztetés alatti \"Javaslat\" doboz egy egység nézeténél?",
-    a: "Egy előre megírt, gyakorlati ötlet a gyengébb nap+óra kombinációhoz — nem AI generálja, egy pár kész szövegből választ ki egyet konzisztensen, mindig ugyanazt ugyanahhoz a helyzethez. Ha egy partner rákérdez, nyugodtan mondd, hogy ez egy sablon-tanács, nem a rendszer által \"kiszámolt\" megoldás.",
+    a: "Egy előre megírt, gyakorlati ötlet a gyengébb nap+óra kombinációhoz — nem AI generálja, egy pár kész szövegből választ ki egyet konzisztensen, mindig ugyanazt ugyanahhoz a helyzethez. A mellette lévő színes címke egy fix, minden partnernél ugyanazt jelentő 1-10 skálán mutatja a súlyosságot, függetlenül attól, az adott partnernek milyen riasztási küszöbe van beállítva. Ha egy partner rákérdez, nyugodtan mondd, hogy ez egy sablon-tanács, nem a rendszer által \"kiszámolt\" megoldás.",
   },
   {
     q: "Miért 8-20 óráig mutatja a hőtérkép egy éjszaka nyitva tartó helynél?",

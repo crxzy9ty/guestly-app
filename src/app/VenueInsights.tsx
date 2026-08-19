@@ -5,8 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Heatmap } from "@/app/dashboard/Heatmap";
 import { TrendChart } from "@/app/dashboard/TrendChart";
 import { PERIODS, type PeriodValue } from "@/lib/dashboard/period";
-import type { AspectAverage, HeatmapGrid } from "@/lib/dashboard/heatmap";
+import { heatColor, type AspectAverage, type HeatmapGrid } from "@/lib/dashboard/heatmap";
 import type { TrendPoint } from "@/lib/dashboard/trend";
+import { scoreTierLabel } from "@/lib/dashboard/severity";
+import type { Suggestion } from "@/lib/dashboard/suggestions";
 
 // The period lives in the URL rather than component state so it survives a
 // refresh, can be linked to a colleague, and — since the aggregation happens
@@ -68,7 +70,7 @@ export function VenueInsights({
   hours: number[];
   trendSeries: Record<string, TrendPoint[]>;
   alertMessage: string | null;
-  suggestion: string | null;
+  suggestion: Suggestion | null;
   totalSubmissions: number;
   period: PeriodValue;
 }) {
@@ -131,13 +133,29 @@ export function VenueInsights({
 
       {/* Rule-based, not measured — the "Javaslat" pill and the distinct
           (bordered, not solid-ink) styling exist so this never reads as
-          another data point next to the alert above it. */}
+          another data point next to the alert above it. The severity badge
+          uses the same heatColor() the heatmap/trend dots use, so the same
+          score reads as the same color everywhere in the app — it's an
+          absolute 1-10 read (src/lib/dashboard/severity.ts), not relative to
+          this partner's own alert_threshold, so it means the same thing no
+          matter how strict a given partner's threshold is set. */}
       {suggestion && (
         <div className="mb-5 rounded-xl border border-line bg-paper p-4">
-          <span className="mb-1.5 inline-block rounded-full bg-violet px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-            Javaslat
-          </span>
-          <div className="text-sm leading-relaxed text-ink">{suggestion}</div>
+          <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="inline-block rounded-full bg-violet px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              Javaslat
+            </span>
+            <span
+              className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
+              style={{
+                background: heatColor(suggestion.avg),
+                color: suggestion.avg < 5 ? "#fff" : "var(--color-ink)",
+              }}
+            >
+              {scoreTierLabel(suggestion.avg)}
+            </span>
+          </div>
+          <div className="text-sm leading-relaxed text-ink">{suggestion.text}</div>
         </div>
       )}
 

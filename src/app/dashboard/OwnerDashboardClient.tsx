@@ -8,6 +8,7 @@ import { ownerHelpFaqs } from "@/lib/help-content";
 import { periodLabel, type PeriodValue } from "@/lib/dashboard/period";
 import type { AspectAverage, HeatmapGrid } from "@/lib/dashboard/heatmap";
 import type { TrendPoint } from "@/lib/dashboard/trend";
+import type { Suggestion } from "@/lib/dashboard/suggestions";
 
 export function OwnerDashboardClient({
   aspectAverages,
@@ -26,7 +27,7 @@ export function OwnerDashboardClient({
   hours: number[];
   trendSeries: Record<string, TrendPoint[]>;
   alertMessage: string | null;
-  suggestion: string | null;
+  suggestion: Suggestion | null;
   totalSubmissions: number;
   logRows: LogRow[];
   aspects: { key: string; label: string }[];
