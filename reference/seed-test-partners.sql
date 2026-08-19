@@ -47,7 +47,7 @@ begin
       ('TESZT – Night Bar Eclipse',   'Kazinczy utca 21, Budapest',   6.5, 18, 2),
       ('TESZT – Gyros Sarok',         'Blaha Lujza tér 3, Budapest',  6.0, null::int, null::int),
       ('TESZT – Cukrászda Édenkert',  'Fő tér 5, Szeged',             8.2, 7, 15),
-      ('TESZT – Sörkert Tölgyfa',     'Diófa utca 9, Debrecen',       5.2, 16, 24),
+      ('TESZT – Sörkert Tölgyfa',     'Diófa utca 9, Debrecen',       5.2, 16, 0),
       ('TESZT – Reggeliző Napfény',   'Nap utca 2, Pécs',             7.6, 7, 13),
       ('TESZT – Étterem Óváros',      'Óváros tér 1, Sopron',         4.3, null::int, null::int),
       ('TESZT – Kávézó Kilátó Plaza', 'Bevásárló út 10, Győr',        6.8, null::int, null::int),
