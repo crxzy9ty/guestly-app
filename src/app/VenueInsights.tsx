@@ -69,10 +69,6 @@ export function VenueInsights({
   period: PeriodValue;
 }) {
   const [selectedAspect, setSelectedAspect] = useState(aspectAverages[0]?.key ?? "");
-  // Several ways to read the same reviews, on purpose: the heatmap answers
-  // "which day/hour is weak", the trend answers "is this getting better or
-  // worse" — different questions, so a toggle rather than picking one.
-  const [chartView, setChartView] = useState<"heatmap" | "trend">("heatmap");
 
   // `selectedAspect` is state, so it survives a venue switch (the owner's
   // VenueSwitcher navigates client-side to the same route) even though
@@ -129,42 +125,29 @@ export function VenueInsights({
         </div>
       )}
 
-      <div className="rounded-2xl border border-line bg-paper p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <div className="text-sm font-bold text-ink">
-              {activeAspect?.label} — {chartView === "heatmap" ? "nap és óra szerint" : "időbeli alakulás"}
-            </div>
-            <div className="text-[11px] text-slate">
-              {chartView === "heatmap"
-                ? "A kiválasztott időszak értékelései hétköznap és napszak szerint összesítve."
-                : "Ugyanezek az értékelések időrendben — javul vagy romlik ez a szempont?"}
-            </div>
-          </div>
-          <div className="flex shrink-0 gap-1.5 rounded-lg bg-line p-[3px]">
-            {(
-              [
-                ["heatmap", "Hőtérkép"],
-                ["trend", "Trend"],
-              ] as const
-            ).map(([k, l]) => (
-              <button
-                key={k}
-                onClick={() => setChartView(k)}
-                className={`rounded-md px-3 py-1 text-xs font-bold ${
-                  chartView === k ? "bg-paper text-ink" : "text-slate"
-                }`}
-              >
-                {l}
-              </button>
-            ))}
+      {/* Trend sits above the heatmap, both always visible, rather than a
+          toggle between them — the two answer different questions ("is this
+          getting better or worse" vs. "which day/hour is weak"), and showing
+          both at once reads as a richer view of the same data instead of
+          hiding one behind a click. */}
+      <div className="mb-4 rounded-2xl border border-line bg-paper p-4">
+        <div className="mb-3">
+          <div className="text-sm font-bold text-ink">{activeAspect?.label} — időbeli alakulás</div>
+          <div className="text-[11px] text-slate">
+            Ugyanezek az értékelések időrendben — javul vagy romlik ez a szempont?
           </div>
         </div>
-        {chartView === "heatmap" ? (
-          <Heatmap grid={(activeAspect && grids[activeAspect.key]) ?? []} />
-        ) : (
-          <TrendChart points={(activeAspect && trendSeries[activeAspect.key]) ?? []} />
-        )}
+        <TrendChart points={(activeAspect && trendSeries[activeAspect.key]) ?? []} />
+      </div>
+
+      <div className="rounded-2xl border border-line bg-paper p-4">
+        <div className="mb-3">
+          <div className="text-sm font-bold text-ink">{activeAspect?.label} — nap és óra szerint</div>
+          <div className="text-[11px] text-slate">
+            A kiválasztott időszak értékelései hétköznap és napszak szerint összesítve.
+          </div>
+        </div>
+        <Heatmap grid={(activeAspect && grids[activeAspect.key]) ?? []} />
       </div>
     </>
   );

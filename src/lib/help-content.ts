@@ -6,8 +6,8 @@ export const ownerHelpFaqs: HelpFaq[] = [
     a: "Minden cella egy adott nap egy adott óráját mutatja, 1-10 skálán. Minél zöldebb egy cella, annál jobb az átlag; a magenta/rózsaszín cellák gyengébb eredményt jeleznek. Az üres, szaggatott keretű cellákhoz még nem érkezett elég értékelés.",
   },
   {
-    q: "Mi a különbség a Hőtérkép és a Trend nézet között?",
-    a: "A Hőtérkép azt mutatja meg, mikor (melyik nap, melyik napszak) gyengébb egy szempont — ez segít eldönteni, mikor kell erősíteni a személyzetet. A Trend ugyanezeket az értékeléseket időrendben mutatja, hogy lásd, javul vagy romlik-e a szempont a kiválasztott időszakban. A kettő közt a kártya jobb felső sarkában lévő kapcsolóval válthatsz.",
+    q: "Mi a különbség a Trend és a Hőtérkép nézet között?",
+    a: "A Trend a kiválasztott szempont értékeléseit időrendben mutatja, hogy lásd, javul vagy romlik-e az adott terület a kiválasztott időszakban. Az alatta lévő Hőtérkép azt mutatja meg, mikor (melyik nap, melyik napszak) gyengébb ugyanez a szempont — ez segít eldönteni, mikor kell erősíteni a személyzetet. A kettő egymás alatt látszik, nem kell köztük váltani.",
   },
   {
     q: "Miért mutat figyelmeztetést a rendszer?",
