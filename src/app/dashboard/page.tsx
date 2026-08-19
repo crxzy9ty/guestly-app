@@ -185,21 +185,32 @@ export default async function DashboardPage({
   );
 }
 
+// Two rows on purpose: the top row (logo + label + the two action links) is
+// the part that must never wrap or collide, so it only ever holds short,
+// fixed-length content. The email — arbitrary length, not under our control —
+// gets its own row underneath, where it can be as long as it needs to be
+// without threatening the row above it.
 function Header({ email }: { email: string | undefined }) {
   return (
-    <div className="mb-2 flex items-center justify-between">
-      <div className="text-xs font-bold uppercase tracking-[0.2em] text-violet">Partneri nézet</div>
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-slate">{email}</span>
-        <Link href="/set-password" className="text-sm font-semibold text-slate hover:text-ink">
-          Jelszó módosítása
-        </Link>
-        <form action={signOutOwner}>
-          <button type="submit" className="text-sm font-semibold text-slate hover:text-ink">
-            Kijelentkezés
-          </button>
-        </form>
+    <div className="mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="h-[18px] w-[18px] shrink-0 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
+          <span className="text-sm font-bold tracking-tight text-ink">Fydback</span>
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-violet">Partneri nézet</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <Link href="/set-password" className="whitespace-nowrap text-sm font-semibold text-slate hover:text-ink">
+            Jelszó módosítása
+          </Link>
+          <form action={signOutOwner}>
+            <button type="submit" className="whitespace-nowrap text-sm font-semibold text-slate hover:text-ink">
+              Kijelentkezés
+            </button>
+          </form>
+        </div>
       </div>
+      <div className="mt-1 truncate text-xs text-slate">{email}</div>
     </div>
   );
 }
