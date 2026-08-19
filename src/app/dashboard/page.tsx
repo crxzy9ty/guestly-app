@@ -6,6 +6,7 @@ import { VenueSwitcher } from "./VenueSwitcher";
 import { OwnerDashboardClient } from "./OwnerDashboardClient";
 import type { LogRow } from "./LogTable";
 import { gridsByAspect, hourBucketsFor, joinAspectAverages, weakestBucket, type HeatmapBucketRow } from "@/lib/dashboard/heatmap";
+import { actionSuggestion } from "@/lib/dashboard/suggestions";
 import { trendSeriesByAspect, type TrendBucketRow } from "@/lib/dashboard/trend";
 import { parsePeriod, periodDays } from "@/lib/dashboard/period";
 
@@ -132,6 +133,10 @@ export default async function DashboardPage({
   const totalSubmissions = Number(summary?.review_count ?? 0);
 
   let alertMessage: string | null = null;
+  // Only set when the alert is tied to a specific, data-backed day/hour cell
+  // (i.e. `bucket` below) — the generic no-bucket fallback message has
+  // nothing concrete for a suggestion to reference.
+  let suggestion: string | null = null;
   if (totalSubmissions >= 5) {
     const withData = aspectAverages.filter((a) => a.avg !== null);
     const weakest = withData.sort((a, b) => a.avg! - b.avg!)[0];
@@ -140,6 +145,9 @@ export default async function DashboardPage({
       alertMessage = bucket
         ? `${weakest.label} gyengébb ${bucket.day} ${bucket.hour}h körül (átlag: ${bucket.avg.toFixed(1)}) — érdemes ilyenkor erősíteni a személyzetet.`
         : `${weakest.label} átlaga jelenleg ${weakest.avg!.toFixed(1)}, a ${selected.alert_threshold} alatti figyelmeztetési küszöb alatt.`;
+      if (bucket) {
+        suggestion = actionSuggestion(weakest.key, weakest.label, bucket.day, bucket.hour);
+      }
     }
   }
 
@@ -168,6 +176,7 @@ export default async function DashboardPage({
         hours={hours}
         trendSeries={trendSeries}
         alertMessage={alertMessage}
+        suggestion={suggestion}
         totalSubmissions={totalSubmissions}
         logRows={logRows}
         aspects={safeAspects}

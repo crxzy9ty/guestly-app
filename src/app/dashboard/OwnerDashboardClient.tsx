@@ -15,6 +15,7 @@ export function OwnerDashboardClient({
   hours,
   trendSeries,
   alertMessage,
+  suggestion,
   totalSubmissions,
   logRows,
   aspects,
@@ -25,6 +26,7 @@ export function OwnerDashboardClient({
   hours: number[];
   trendSeries: Record<string, TrendPoint[]>;
   alertMessage: string | null;
+  suggestion: string | null;
   totalSubmissions: number;
   logRows: LogRow[];
   aspects: { key: string; label: string }[];
@@ -74,6 +76,7 @@ export function OwnerDashboardClient({
           hours={hours}
           trendSeries={trendSeries}
           alertMessage={alertMessage}
+          suggestion={suggestion}
           totalSubmissions={totalSubmissions}
         />
       )}

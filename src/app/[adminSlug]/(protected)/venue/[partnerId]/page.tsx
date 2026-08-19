@@ -11,6 +11,7 @@ import {
 } from "@/lib/dashboard/heatmap";
 import { trendSeriesByAspect, type TrendBucketRow } from "@/lib/dashboard/trend";
 import { parsePeriod, periodDays, periodLabel } from "@/lib/dashboard/period";
+import { actionSuggestion } from "@/lib/dashboard/suggestions";
 
 // Admin view of a single venue, showing exactly what that venue's owner sees
 // on their own dashboard (same VenueInsights component, same aggregate views).
@@ -82,6 +83,7 @@ export default async function AdminVenueDetailPage({
   // Same wording and same 5-review floor as the owner dashboard, so a partner
   // and an admin never read a different alert off identical data.
   let alertMessage: string | null = null;
+  let suggestion: string | null = null;
   if (totalSubmissions >= 5) {
     const withData = aspectAverages.filter((a) => a.avg !== null);
     const weakest = withData.sort((a, b) => a.avg! - b.avg!)[0];
@@ -90,6 +92,9 @@ export default async function AdminVenueDetailPage({
       alertMessage = bucket
         ? `${weakest.label} gyengébb ${bucket.day} ${bucket.hour}h körül (átlag: ${bucket.avg.toFixed(1)}) — érdemes ilyenkor erősíteni a személyzetet.`
         : `${weakest.label} átlaga jelenleg ${weakest.avg!.toFixed(1)}, a ${partner.alert_threshold} alatti figyelmeztetési küszöb alatt.`;
+      if (bucket) {
+        suggestion = actionSuggestion(weakest.key, weakest.label, bucket.day, bucket.hour);
+      }
     }
   }
 
@@ -129,6 +134,7 @@ export default async function AdminVenueDetailPage({
         grids={grids}
         hours={hours}
         trendSeries={trendSeries}
+        suggestion={suggestion}
         alertMessage={alertMessage}
         totalSubmissions={totalSubmissions}
       />

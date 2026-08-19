@@ -14,6 +14,10 @@ export const ownerHelpFaqs: HelpFaq[] = [
     a: "Ha egy szempont átlaga a partneredhez beállított riasztási küszöb alá esik, a rendszer automatikusan kiemeli — a konkrét nap+óra megjelölésével, ha van rá elég adat —, hogy időben tudj reagálni, például extra személyzetet beosztani egy forgalmas időszakra.",
   },
   {
+    q: "Mit jelent a figyelmeztetés alatti \"Javaslat\" doboz?",
+    a: "Egy előre megírt, gyakorlati ötlet, ami a gyengébb nap+óra kombinációhoz kapcsolódik — nem mesterséges intelligencia generálja, hanem egy pár kész szövegből választ ki egyet, mindig ugyanazt ugyanahhoz a helyzethez. Tekintsd tanácsnak, nem mért adatnak; a döntés mindig a tiéd.",
+  },
+  {
     q: "Mit látok a Napló fülön?",
     a: "Minden egyes leadott értékelést, egyedi szavazat-azonosítóval és pontos időbélyeggel. Ha egy vendég 1-3 pontot adott valamelyik szempontra, itt látod, ha írt is hozzá pár szavas indoklást. A dátum és pontszám szerint szűrhetsz, és CSV-be is exportálhatod a listát.",
   },
@@ -67,6 +71,10 @@ export const adminHelpFaqs: HelpFaq[] = [
   {
     q: "Hogyan állítom be, mikor jelezzen riasztást a rendszer?",
     a: "A Partnerek fülön, egy egység szerkesztésekor a \"Riasztási küszöb\" mezőben partnerenként külön beállítható — ez alapból 6.5, de igazíthatod az adott hely elvárásaihoz.",
+  },
+  {
+    q: "Mit jelent a figyelmeztetés alatti \"Javaslat\" doboz egy egység nézeténél?",
+    a: "Egy előre megírt, gyakorlati ötlet a gyengébb nap+óra kombinációhoz — nem AI generálja, egy pár kész szövegből választ ki egyet konzisztensen, mindig ugyanazt ugyanahhoz a helyzethez. Ha egy partner rákérdez, nyugodtan mondd, hogy ez egy sablon-tanács, nem a rendszer által \"kiszámolt\" megoldás.",
   },
   {
     q: "Miért 8-20 óráig mutatja a hőtérkép egy éjszaka nyitva tartó helynél?",

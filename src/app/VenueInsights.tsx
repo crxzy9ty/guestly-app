@@ -59,6 +59,7 @@ export function VenueInsights({
   hours,
   trendSeries,
   alertMessage,
+  suggestion,
   totalSubmissions,
   period,
 }: {
@@ -67,6 +68,7 @@ export function VenueInsights({
   hours: number[];
   trendSeries: Record<string, TrendPoint[]>;
   alertMessage: string | null;
+  suggestion: string | null;
   totalSubmissions: number;
   period: PeriodValue;
 }) {
@@ -121,9 +123,21 @@ export function VenueInsights({
       </div>
 
       {alertMessage && (
-        <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-ink p-4 text-white">
+        <div className="mb-2.5 flex items-start gap-2.5 rounded-xl bg-ink p-4 text-white">
           <span className="text-lg">⚠</span>
           <div className="text-sm leading-relaxed">{alertMessage}</div>
+        </div>
+      )}
+
+      {/* Rule-based, not measured — the "Javaslat" pill and the distinct
+          (bordered, not solid-ink) styling exist so this never reads as
+          another data point next to the alert above it. */}
+      {suggestion && (
+        <div className="mb-5 rounded-xl border border-line bg-paper p-4">
+          <span className="mb-1.5 inline-block rounded-full bg-violet px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+            Javaslat
+          </span>
+          <div className="text-sm leading-relaxed text-ink">{suggestion}</div>
         </div>
       )}
 
