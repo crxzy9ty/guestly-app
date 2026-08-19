@@ -61,11 +61,11 @@ export default function DemoRequestPage() {
           </div>
           <div>
             <label className={labelClass}>E-mail cím</label>
-            <input name="email" type="email" required placeholder="anna@kavezoaroma.hu" className={inputClass} />
+            <input name="email" type="email" required placeholder="anna@aroma.hu" className={inputClass} />
           </div>
           <div>
             <label className={labelClass}>Vendéglátóhely neve</label>
-            <input name="business" required placeholder="Kávézó Aroma" className={inputClass} />
+            <input name="business" required placeholder="Aroma" className={inputClass} />
           </div>
           <div>
             <label className={labelClass}>Üzenet (opcionális)</label>

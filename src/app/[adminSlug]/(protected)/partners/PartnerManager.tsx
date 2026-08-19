@@ -53,7 +53,7 @@ function PartnerFields({ defaults }: { defaults?: Partial<Partner> }) {
     <div className="grid gap-2.5">
       <div>
         <label className={labelClass}>Egység neve</label>
-        <input name="name" defaultValue={defaults?.name ?? ""} required placeholder="Kávézó Aroma" className={inputClass} />
+        <input name="name" defaultValue={defaults?.name ?? ""} required placeholder="Aroma" className={inputClass} />
       </div>
       <div>
         <label className={labelClass}>Pontos cím</label>
