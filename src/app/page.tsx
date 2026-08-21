@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_CONTENT, type MarketingContent } from "@/lib/content";
 import { FaqItem } from "./FaqItem";
 import { Logo } from "./Logo";
+import { BackToTop } from "./BackToTop";
 
 const GRAD = "linear-gradient(135deg, #22E5EA 0%, #5B21B6 55%, #E619C8 100%)";
 
@@ -222,6 +223,8 @@ export default async function Home() {
           </div>
         </div>
       </div>
+
+      <BackToTop />
     </div>
   );
 }
