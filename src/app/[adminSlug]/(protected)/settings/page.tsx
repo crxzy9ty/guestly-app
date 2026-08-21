@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient, getCachedUser } from "@/lib/supabase/server";
-import { DEFAULT_CONTENT, type MarketingContent } from "@/lib/content";
+import { resolveContent } from "@/lib/content";
 import { isSuperAdminEmail } from "@/lib/super-admin";
 import { SettingsView } from "./SettingsView";
 
@@ -37,7 +37,7 @@ export default async function AdminSettingsPage({
       supabase.from("profiles").select("id, email, last_seen_at").eq("role", "admin").order("email"),
     ]);
 
-  const content = (contentRow?.content as MarketingContent | undefined) ?? DEFAULT_CONTENT;
+  const content = resolveContent(contentRow?.content);
 
   return (
     <div>

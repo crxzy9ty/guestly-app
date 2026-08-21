@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Outfit, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
-import { DEFAULT_CONTENT, type MarketingContent } from "@/lib/content";
+import { resolveContent } from "@/lib/content";
 import { FaqItem } from "./FaqItem";
 import { Logo } from "./Logo";
 import { BackToTop } from "./BackToTop";
@@ -18,39 +18,12 @@ const display = Outfit({ subsets: ["latin"], weight: ["600", "700", "800"] });
 const body = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["500", "600"] });
 
-const SIGNAL = [
-  { tag: "19:04", title: "Beérkezik egy értékelés", body: "Egy apró jel — még csak egyetlen pont az estén.", color: "#17e0ff", size: 10 },
-  { tag: "19:24", title: "Kirajzolódik egy mintázat", body: "Öt hasonló válasz ugyanarra a szempontra, ugyanabból az időszakból.", color: "#7c3aff", size: 18 },
-  { tag: "Záráskor", title: "Tiszta kép, cselekvésre kész", body: "Tudod, mi történt, mikor, és min érdemes változtatni holnaptól.", color: "#ff2fc4", size: 28 },
-];
-
-const STEPS = [
-  {
-    title: "Kihelyezed az asztali kártyát",
-    body: "Minden asztalra kerül egy QR-kód. Nincs app, nincs regisztráció — a vendég csak a telefonja kameráját nyitja meg.",
-  },
-  {
-    title: "A vendég 30 másodperc alatt értékel",
-    body: "Nincs kellemetlen szituáció, nem kell odahívni senkit — csak öt gyors kérdés. Cserébe részt vesz egy napi nyereményjátékban is, amit te állítasz be.",
-  },
-  {
-    title: "Te látod, mi történik óráról órára",
-    body: "Nem havi átlagot kapsz, hanem azt, hogy péntek este 7-kor pontosan mi romlik el — és javíthatsz, mielőtt elveszíted a vendéget.",
-  },
-];
-
-const COMPARISON_ROWS: [string, string, string][] = [
-  ["Mikor tudod meg", "Napokkal-hetekkel később, ha egyáltalán", "Aznap, akár óránkénti bontásban"],
-  ["Ki látja", "Bárki, nyilvánosan", "Csak te és a csapatod"],
-  ["Mit mond", "Egy összesített csillagszám", "Konkrét szempont, időpont, gyakran ok is"],
-  ["Mit takar az átlag", "Egy 5 éves múlt átlaga — egy rossz hónap alig mozgatja", "Az elmúlt napok/hetek valós állapota"],
-  ["Cselekvésre alkalmas?", "Csak utólagos reagálás", "Beavatkozhatsz, mielőtt gond lesz belőle"],
-];
-
-const PROBLEMS: [string, string][] = [
-  ["Havi átlagok", "Egy negyedéves felmérés nem mondja meg, hogy péntek este mi ment rosszul."],
-  ["Néma vendégek", "A legtöbben nem szólnak, mert kellemetlen odahívni a felszolgálót — inkább csendben legközelebb máshova mennek."],
-  ["Nyilvános kritika", "Amit megosztanak, az gyakran egyenesen Google-re kerül, mire te megtudod."],
+// Visual-only properties for the 3 fixed signal cells and the 3 fixed
+// dotmark colors — not text, so not part of the editable content model.
+const SIGNAL_VISUAL = [
+  { color: "#17e0ff", size: 10 },
+  { color: "#7c3aff", size: 18 },
+  { color: "#ff2fc4", size: 28 },
 ];
 
 function Section({
@@ -113,7 +86,7 @@ function HeroMark() {
 export default async function Home() {
   const supabase = await createClient();
   const { data } = await supabase.from("content_settings").select("content").eq("id", 1).maybeSingle();
-  const content = (data?.content as MarketingContent | undefined) ?? DEFAULT_CONTENT;
+  const content = resolveContent(data?.content);
 
   return (
     <div className={`${body.className} text-ink`}>
@@ -122,10 +95,10 @@ export default async function Home() {
         <Logo size={27} />
         <div className="flex items-center gap-2.5">
           <Link href="/login" className="px-1.5 py-2 text-sm font-semibold text-ink">
-            Bejelentkezés
+            {content.navLogin}
           </Link>
           <Link href="/demo" className="rounded-xl bg-ink px-5 py-2.5 text-sm font-bold text-white">
-            Demó kérése
+            {content.ctaPrimary}
           </Link>
         </div>
       </div>
@@ -154,9 +127,12 @@ export default async function Home() {
           </div>
 
           <div className={`mt-16 grid gap-px overflow-hidden rounded-[20px] border ${HAIRLINE} bg-[#e2d6f7] sm:grid-cols-3`}>
-            {SIGNAL.map((c) => (
+            {content.signal.map((c, i) => (
               <div key={c.tag} className="bg-paper px-6 py-7 text-left">
-                <div className="mb-4 rounded-full" style={{ width: c.size, height: c.size, background: c.color }} />
+                <div
+                  className="mb-4 rounded-full"
+                  style={{ width: SIGNAL_VISUAL[i].size, height: SIGNAL_VISUAL[i].size, background: SIGNAL_VISUAL[i].color }}
+                />
                 <div className={`${mono.className} mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-slate`}>
                   {c.tag}
                 </div>
@@ -170,15 +146,13 @@ export default async function Home() {
 
       {/* Problem */}
       <Section mist>
-        <Eyebrow>A probléma</Eyebrow>
-        <h2 className={`${display.className} mb-8 max-w-md text-[28px] font-extrabold tracking-tight`}>
-          A legtöbb visszajelzés túl későn, túl homályosan érkezik
-        </h2>
+        <Eyebrow>{content.problemEyebrow}</Eyebrow>
+        <h2 className={`${display.className} mb-8 max-w-md text-[28px] font-extrabold tracking-tight`}>{content.problemTitle}</h2>
         <div className="grid gap-5 sm:grid-cols-3">
-          {PROBLEMS.map(([title, problemBody]) => (
-            <div key={title} className={`rounded-2xl border ${HAIRLINE} bg-paper p-5`}>
-              <div className="mb-2 text-[15px] font-bold">{title}</div>
-              <div className="text-[13.5px] leading-relaxed text-slate">{problemBody}</div>
+          {content.problems.map((p) => (
+            <div key={p.title} className={`rounded-2xl border ${HAIRLINE} bg-paper p-5`}>
+              <div className="mb-2 text-[15px] font-bold">{p.title}</div>
+              <div className="text-[13.5px] leading-relaxed text-slate">{p.body}</div>
             </div>
           ))}
         </div>
@@ -186,33 +160,28 @@ export default async function Home() {
 
       {/* Fydback vs Google Review */}
       <Section>
-        <Eyebrow>Miért nem elég a Google Review</Eyebrow>
-        <h2 className={`${display.className} mb-4 max-w-lg text-[28px] font-extrabold tracking-tight`}>
-          Nem egy plusz csatorna vagyunk — egy korábbi lépcsőfok
-        </h2>
-        <p className="mb-7 max-w-xl text-[15px] leading-relaxed text-slate">
-          A Google Review akkor derít fényt a problémára, amikor már nyilvános, és a vendég már döntött. A Fydback ezt a
-          pillanat előtt hozza el hozzád — belsőleg, cselekvésre alkalmas formában.
-        </p>
+        <Eyebrow>{content.compareEyebrow}</Eyebrow>
+        <h2 className={`${display.className} mb-4 max-w-lg text-[28px] font-extrabold tracking-tight`}>{content.compareTitle}</h2>
+        <p className="mb-7 max-w-xl text-[15px] leading-relaxed text-slate">{content.compareBody}</p>
         <div className={`overflow-x-auto rounded-2xl border ${HAIRLINE}`}>
           <table className="w-full min-w-[520px] border-collapse text-[13.5px]">
             <thead>
               <tr className={`${MIST} text-left`}>
                 <th className="px-4 py-3"></th>
                 <th className={`${mono.className} px-4 py-3 text-[11px] font-medium uppercase tracking-[0.08em] text-slate`}>
-                  Google Review
+                  {content.compareColGoogle}
                 </th>
                 <th className={`${mono.className} px-4 py-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#7c3aff]`}>
-                  Fydback
+                  {content.compareColOurs}
                 </th>
               </tr>
             </thead>
             <tbody>
-              {COMPARISON_ROWS.map(([label, google, ours], i) => (
-                <tr key={label} className={`border-t ${HAIRLINE} ${i % 2 ? MIST : "bg-paper"}`}>
-                  <td className="px-4 py-3 font-bold text-ink">{label}</td>
-                  <td className="px-4 py-3 text-slate">{google}</td>
-                  <td className="px-4 py-3 font-semibold text-ink">{ours}</td>
+              {content.compareRows.map((row, i) => (
+                <tr key={row.label} className={`border-t ${HAIRLINE} ${i % 2 ? MIST : "bg-paper"}`}>
+                  <td className="px-4 py-3 font-bold text-ink">{row.label}</td>
+                  <td className="px-4 py-3 text-slate">{row.google}</td>
+                  <td className="px-4 py-3 font-semibold text-ink">{row.ours}</td>
                 </tr>
               ))}
             </tbody>
@@ -222,12 +191,10 @@ export default async function Home() {
 
       {/* How it works */}
       <Section mist>
-        <Eyebrow>Hogyan működik</Eyebrow>
-        <h2 className={`${display.className} mb-10 max-w-md text-[28px] font-extrabold tracking-tight`}>
-          Három lépés az asztaltól a döntésig
-        </h2>
+        <Eyebrow>{content.stepsEyebrow}</Eyebrow>
+        <h2 className={`${display.className} mb-10 max-w-md text-[28px] font-extrabold tracking-tight`}>{content.stepsTitle}</h2>
         <div className="grid gap-7 sm:grid-cols-3">
-          {STEPS.map((s) => (
+          {content.steps.map((s) => (
             <div key={s.title}>
               <div className="mb-4">
                 <Dotmark size="lg" />
@@ -243,19 +210,15 @@ export default async function Home() {
       <Section>
         <div className="rounded-2xl bg-ink px-6 py-12">
           <div className="grid gap-7 text-center sm:grid-cols-3">
-            {[
-              ["30 mp", "egy vendég átlagos kitöltési ideje"],
-              ["1 nap", "a bevezetéstől az első adatokig"],
-              ["0", "letöltendő alkalmazás a vendégnek"],
-            ].map(([n, l]) => (
-              <div key={l}>
+            {content.stats.map((s) => (
+              <div key={s.label}>
                 <div
                   className={`${display.className} mb-1.5 text-4xl font-extrabold tracking-tight`}
                   style={{ backgroundImage: GRAD, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}
                 >
-                  {n}
+                  {s.number}
                 </div>
-                <div className="text-[13px] text-white/65">{l}</div>
+                <div className="text-[13px] text-white/65">{s.label}</div>
               </div>
             ))}
           </div>
@@ -264,10 +227,8 @@ export default async function Home() {
 
       {/* FAQ */}
       <Section mist>
-        <Eyebrow>Kérdések</Eyebrow>
-        <h2 className={`${display.className} mb-6 text-[28px] font-extrabold tracking-tight`}>
-          Amit tudni érdemes indulás előtt
-        </h2>
+        <Eyebrow>{content.faqEyebrow}</Eyebrow>
+        <h2 className={`${display.className} mb-6 text-[28px] font-extrabold tracking-tight`}>{content.faqTitle}</h2>
         <div>
           {content.faqs.map((f) => (
             <FaqItem key={f.q} q={f.q} a={f.a} />
@@ -280,7 +241,7 @@ export default async function Home() {
         <div className="py-5 text-center">
           <Eyebrow center>
             <Dotmark />
-            Kezdjük el
+            {content.finalCtaEyebrow}
           </Eyebrow>
           <h2 className={`${display.className} mb-3.5 text-[30px] font-extrabold tracking-tight`}>{content.finalCtaTitle}</h2>
           <p className="mx-auto mb-7 max-w-md text-[15px] leading-relaxed text-slate">{content.finalCtaBody}</p>
@@ -296,12 +257,12 @@ export default async function Home() {
           <Logo size={14} />
           <div className="flex items-center gap-4 text-xs text-slate">
             <Link href="/adatvedelem" className="hover:text-ink">
-              Adatkezelési tájékoztató
+              {content.footerPrivacy}
             </Link>
             <Link href="/impresszum" className="hover:text-ink">
-              Impresszum
+              {content.footerImprint}
             </Link>
-            <span>© 2026 Fydback</span>
+            <span>{content.footerCopyright}</span>
           </div>
         </div>
       </div>
