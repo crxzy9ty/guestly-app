@@ -51,7 +51,7 @@ export default async function Home() {
       {/* Nav */}
       <div className="mx-auto flex max-w-4xl items-center justify-between bg-paper px-6 py-5">
         <div className="flex items-center gap-2">
-          <Logo size={18} />
+          <Logo size={27} />
         </div>
         <div className="flex items-center gap-2.5">
           <Link href="/login" className="px-1.5 py-2 text-sm font-semibold text-ink">
