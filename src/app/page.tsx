@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_CONTENT, type MarketingContent } from "@/lib/content";
 import { FaqItem } from "./FaqItem";
+import { Logo } from "./Logo";
 
 const GRAD = "linear-gradient(135deg, #22E5EA 0%, #5B21B6 55%, #E619C8 100%)";
 
@@ -50,8 +51,7 @@ export default async function Home() {
       {/* Nav */}
       <div className="mx-auto flex max-w-4xl items-center justify-between bg-paper px-6 py-5">
         <div className="flex items-center gap-2">
-          <div className="h-5 w-5 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-          <span className="text-lg font-bold tracking-tight text-ink">Fydback</span>
+          <Logo size={18} />
         </div>
         <div className="flex items-center gap-2.5">
           <Link href="/login" className="px-1.5 py-2 text-sm font-semibold text-ink">
@@ -209,8 +209,7 @@ export default async function Home() {
       <div className="border-t border-line bg-paper px-6 py-7">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="h-4 w-4 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-            <span className="text-sm font-bold tracking-tight text-ink">Fydback</span>
+            <Logo size={14} />
           </div>
           <div className="flex items-center gap-4 text-xs text-slate">
             <Link href="/adatvedelem" className="hover:text-ink">

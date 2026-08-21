@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAdmin } from "@/app/actions/auth";
+import { Logo } from "@/app/Logo";
 
 export function AdminNav({ adminSlug, email }: { adminSlug: string; email: string | undefined }) {
   const pathname = usePathname();
@@ -20,8 +21,7 @@ export function AdminNav({ adminSlug, email }: { adminSlug: string; email: strin
     <div className="border-b border-line bg-paper">
       <div className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-4 py-4 sm:px-6">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="h-[18px] w-[18px] shrink-0 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-          <span className="shrink-0 text-base font-bold tracking-tight text-ink">Fydback</span>
+          <Logo size={16} />
           <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
             Admin
           </span>

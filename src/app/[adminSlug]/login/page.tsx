@@ -3,6 +3,7 @@
 import { use, useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { signInAdmin, type AuthActionState } from "@/app/actions/auth";
+import { Logo } from "@/app/Logo";
 
 const initialState: AuthActionState = { error: null };
 
@@ -31,8 +32,7 @@ export default function AdminLoginPage({
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-ink px-6 py-16">
       <div className="mb-7 flex items-center gap-2">
-        <div className="h-5 w-5 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-        <span className="text-lg font-bold tracking-tight text-white">Fydback</span>
+        <Logo size={18} variant="dark" />
       </div>
 
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#201D29] p-8">

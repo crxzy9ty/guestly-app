@@ -10,6 +10,7 @@ import { actionSuggestion, type Suggestion } from "@/lib/dashboard/suggestions";
 import { trendSeriesByAspect, type TrendBucketRow } from "@/lib/dashboard/trend";
 import { parsePeriod, periodDays } from "@/lib/dashboard/period";
 import { wowDeltas } from "@/lib/dashboard/wow";
+import { Logo } from "@/app/Logo";
 
 // How many recent submissions the Napló shows. Bounded on purpose: this is the
 // one query here that returns row-level data rather than aggregates, and
@@ -207,8 +208,7 @@ function Header({ email }: { email: string | undefined }) {
     <div className="mb-4">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
         <div className="flex shrink-0 items-center gap-2">
-          <div className="h-[18px] w-[18px] shrink-0 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-          <span className="text-sm font-bold tracking-tight text-ink">Fydback</span>
+          <Logo size={14} />
           <span className="text-xs font-bold uppercase tracking-[0.2em] text-violet">Partneri nézet</span>
         </div>
         <details className="relative shrink-0">

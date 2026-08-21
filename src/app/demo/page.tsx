@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { submitDemoRequest, type DemoRequestState } from "@/app/actions/demo-requests";
+import { Logo } from "@/app/Logo";
 
 const initialState: DemoRequestState = { ok: false, error: null };
 
@@ -44,8 +45,7 @@ export default function DemoRequestPage() {
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-mist px-6 py-16">
       <div className="mb-7 flex items-center gap-2">
-        <div className="h-5 w-5 rounded-md bg-gradient-to-br from-cyan via-violet to-magenta" />
-        <span className="text-lg font-bold tracking-tight text-ink">Fydback</span>
+        <Logo size={18} />
       </div>
 
       <div className="w-full max-w-md rounded-2xl border border-line bg-paper p-8 shadow-[0_20px_50px_rgba(21,19,28,0.08)]">
