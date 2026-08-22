@@ -13,6 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Required for opengraph-image.tsx/twitter-image.tsx to resolve to an
+  // absolute, publicly-fetchable URL (chat apps unfurling a link cannot
+  // reach a relative path) — falls back to the real production domain
+  // rather than the .env.local dev default, since a missing env var should
+  // never silently point link previews at localhost.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL?.startsWith("http") ? process.env.NEXT_PUBLIC_SITE_URL : "https://fydback.hu"),
   title: "Fydback",
   description: "Vendégelégedettség-mérés valós időben.",
 };
