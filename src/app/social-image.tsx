@@ -49,10 +49,10 @@ export async function renderSocialImage() {
               percentage-based translateX(-50%) — Satori's CSS support
               doesn't extend to `%` inside calc(). */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 13, marginBottom: 10 }}>
-              <div style={{ display: "flex", width: 15, height: 15, borderRadius: "50%", background: "#17e0ff" }} />
-              <div style={{ display: "flex", width: 26, height: 26, borderRadius: "50%", background: "#7c3aff" }} />
-              <div style={{ display: "flex", width: 39, height: 39, borderRadius: "50%", background: "#ff2fc4" }} />
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 15, marginLeft: 20, marginBottom: 2 }}>
+              <div style={{ display: "flex", width: 20, height: 20, borderRadius: "50%", background: "#17e0ff" }} />
+              <div style={{ display: "flex", width: 34, height: 34, borderRadius: "50%", background: "#7c3aff" }} />
+              <div style={{ display: "flex", width: 50, height: 50, borderRadius: "50%", background: "#ff2fc4" }} />
             </div>
             <span
               style={{
