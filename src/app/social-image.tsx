@@ -8,16 +8,25 @@ import { ImageResponse } from "next/og";
 export const SOCIAL_IMAGE_SIZE = { width: 1200, height: 630 };
 
 // ImageResponse (Satori) only supports ttf/otf/woff — not woff2, and not
-// variable fonts reliably. @fontsource/outfit ships a static, per-weight
-// .woff file, read locally rather than fetched over the network at request
-// time (no dependency on Google Fonts' user-agent-based format negotiation,
-// no runtime fetch to fail).
-async function loadOutfitExtrabold(): Promise<Buffer> {
-  return readFile(join(process.cwd(), "node_modules/@fontsource/outfit/files/outfit-latin-800-normal.woff"));
+// variable fonts reliably. @fontsource ships static, per-weight .woff
+// files, read locally rather than fetched over the network at request time
+// (no dependency on Google Fonts' user-agent-based format negotiation, no
+// runtime fetch to fail).
+async function loadFont(pkg: string, file: string): Promise<Buffer> {
+  return readFile(join(process.cwd(), `node_modules/@fontsource/${pkg}/files/${file}`));
 }
 
 export async function renderSocialImage() {
-  const outfitExtrabold = await loadOutfitExtrabold();
+  // "fyd"+"back" has no accented characters, so plain Outfit is enough
+  // there. The tagline does (Hungarian "ő"/"ű") — Satori mis-shapes that
+  // specific glyph in Outfit's build (renders a stray loop instead of the
+  // double-acute accent) regardless of which subset file supplies it, so
+  // the tagline uses Plus Jakarta Sans instead, which shapes it correctly.
+  const [outfit, jakarta, jakartaExt] = await Promise.all([
+    loadFont("outfit", "outfit-latin-800-normal.woff"),
+    loadFont("plus-jakarta-sans", "plus-jakarta-sans-latin-700-normal.woff"),
+    loadFont("plus-jakarta-sans", "plus-jakarta-sans-latin-ext-700-normal.woff"),
+  ]);
 
   return new ImageResponse(
     (
@@ -67,14 +76,20 @@ export async function renderSocialImage() {
           </div>
           <span style={{ display: "flex", color: "#14151a" }}>back</span>
         </div>
-        <div style={{ display: "flex", marginTop: 26, fontSize: 32, color: "#5b5b68", fontFamily: "Outfit", fontWeight: 800 }}>
+        <div
+          style={{ display: "flex", marginTop: 26, fontSize: 32, color: "#5b5b68", fontFamily: "Plus Jakarta Sans", fontWeight: 700 }}
+        >
           Vendégelégedettség, valós időben
         </div>
       </div>
     ),
     {
       ...SOCIAL_IMAGE_SIZE,
-      fonts: [{ name: "Outfit", data: outfitExtrabold, weight: 800, style: "normal" }],
+      fonts: [
+        { name: "Outfit", data: outfit, weight: 800, style: "normal" },
+        { name: "Plus Jakarta Sans", data: jakarta, weight: 700, style: "normal" },
+        { name: "Plus Jakarta Sans", data: jakartaExt, weight: 700, style: "normal" },
+      ],
     },
   );
 }
