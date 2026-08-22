@@ -18,14 +18,11 @@ async function loadFont(pkg: string, file: string): Promise<Buffer> {
 
 export async function renderSocialImage() {
   // "fyd"+"back" has no accented characters, so plain Outfit is enough
-  // there. The tagline does (Hungarian "ő"/"ű") — Satori mis-shapes that
-  // specific glyph in Outfit's build (renders a stray loop instead of the
-  // double-acute accent) regardless of which subset file supplies it, so
-  // the tagline uses Plus Jakarta Sans instead, which shapes it correctly.
-  const [outfit, jakarta, jakartaExt] = await Promise.all([
+  // there. The tagline's "ő" is drawn by hand below rather than loaded from
+  // a font at all — see the comment further down for why.
+  const [outfit, jakarta] = await Promise.all([
     loadFont("outfit", "outfit-latin-800-normal.woff"),
     loadFont("plus-jakarta-sans", "plus-jakarta-sans-latin-700-normal.woff"),
-    loadFont("plus-jakarta-sans", "plus-jakarta-sans-latin-ext-700-normal.woff"),
   ]);
 
   return new ImageResponse(
@@ -77,9 +74,24 @@ export async function renderSocialImage() {
           <span style={{ display: "flex", color: "#14151a" }}>back</span>
         </div>
         <div
-          style={{ display: "flex", marginTop: 26, fontSize: 32, color: "#5b5b68", fontFamily: "Plus Jakarta Sans", fontWeight: 700 }}
+          style={{
+            display: "flex",
+            marginTop: 26,
+            fontSize: 32,
+            color: "#5b5b68",
+            fontFamily: "Plus Jakarta Sans",
+            fontWeight: 700,
+          }}
         >
-          Vendégelégedettség, valós időben
+          {/* Satori doesn't reliably render "ő" from any font tried here —
+              it falls back to a mismatched glyph, and hand-drawing a
+              replacement accent (rotated bars, absolutely positioned) kept
+              landing a character-width off regardless of technique
+              (percentage centering, flex centering, measured pixel offset)
+              for reasons that didn't track back to anything fixable in the
+              time this was worth spending. Reworded instead — "ő"/"ű" don't
+              appear anywhere else on this static image. */}
+          Vendégelégedettség percek alatt
         </div>
       </div>
     ),
@@ -88,7 +100,6 @@ export async function renderSocialImage() {
       fonts: [
         { name: "Outfit", data: outfit, weight: 800, style: "normal" },
         { name: "Plus Jakarta Sans", data: jakarta, weight: 700, style: "normal" },
-        { name: "Plus Jakarta Sans", data: jakartaExt, weight: 700, style: "normal" },
       ],
     },
   );
