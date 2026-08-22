@@ -83,15 +83,27 @@ export async function renderSocialImage() {
             fontWeight: 700,
           }}
         >
-          {/* Satori doesn't reliably render "ő" from any font tried here —
-              it falls back to a mismatched glyph, and hand-drawing a
-              replacement accent (rotated bars, absolutely positioned) kept
-              landing a character-width off regardless of technique
-              (percentage centering, flex centering, measured pixel offset)
-              for reasons that didn't track back to anything fixable in the
-              time this was worth spending. Reworded instead — "ő"/"ű" don't
-              appear anywhere else on this static image. */}
-          Vendégelégedettség percek alatt
+          {/* Satori mis-renders "ő" in every font tried (Outfit, Plus
+              Jakarta Sans, Inter — isolated per-glyph tests all show the
+              same broken accent, so this is Satori's composite-glyph
+              handling, not a font problem). Drawn by hand instead: plain
+              "o", with two small rotated bars overlaid via
+              position:absolute on the wrapping span. A plain `left` offset
+              (with or without position:relative on the wrapper) landed a
+              character-width off regardless of value — confirmed with a
+              debug-mode render that changing `left` by 19px barely moved
+              it. What actually works: `left: 0, right: 0` (stretching the
+              absolute box to the wrapper's own width) + `justifyContent:
+              "center"` — verified pixel-correct in the same debug render. */}
+          <span>Vendégélmény, valós id</span>
+          <span style={{ display: "flex", position: "relative" }}>
+            <span>o</span>
+            <div style={{ display: "flex", position: "absolute", top: -10, left: 0, right: 0, justifyContent: "center", gap: 4 }}>
+              <div style={{ display: "flex", width: 2, height: 9, borderRadius: 1, background: "#5b5b68", transform: "rotate(-20deg)" }} />
+              <div style={{ display: "flex", width: 2, height: 9, borderRadius: 1, background: "#5b5b68", transform: "rotate(-20deg)" }} />
+            </div>
+          </span>
+          <span>ben</span>
         </div>
       </div>
     ),
