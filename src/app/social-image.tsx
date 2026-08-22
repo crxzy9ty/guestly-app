@@ -32,14 +32,10 @@ export async function renderSocialImage() {
           background: "#FFFFFF",
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 20, marginBottom: 28 }}>
-          <div style={{ display: "flex", width: 26, height: 26, borderRadius: "50%", background: "#17e0ff" }} />
-          <div style={{ display: "flex", width: 44, height: 44, borderRadius: "50%", background: "#7c3aff" }} />
-          <div style={{ display: "flex", width: 64, height: 64, borderRadius: "50%", background: "#ff2fc4" }} />
-        </div>
         <div
           style={{
             display: "flex",
+            alignItems: "flex-end",
             fontSize: 140,
             fontWeight: 800,
             fontFamily: "Outfit",
@@ -47,16 +43,28 @@ export async function renderSocialImage() {
             lineHeight: 1,
           }}
         >
-          <span
-            style={{
-              display: "flex",
-              backgroundImage: "linear-gradient(90deg, #17e0ff 0%, #7c3aff 45%, #ff2fc4 100%)",
-              backgroundClip: "text",
-              color: "transparent",
-            }}
-          >
-            fyd
-          </span>
+          {/* Dots centered above "fyd" specifically, not the whole wordmark.
+              Plain flexbox (a column whose width is set by "fyd", centering
+              the narrower dot row inside it) rather than Logo.tsx's own
+              percentage-based translateX(-50%) — Satori's CSS support
+              doesn't extend to `%` inside calc(). */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 13, marginBottom: 10 }}>
+              <div style={{ display: "flex", width: 15, height: 15, borderRadius: "50%", background: "#17e0ff" }} />
+              <div style={{ display: "flex", width: 26, height: 26, borderRadius: "50%", background: "#7c3aff" }} />
+              <div style={{ display: "flex", width: 39, height: 39, borderRadius: "50%", background: "#ff2fc4" }} />
+            </div>
+            <span
+              style={{
+                display: "flex",
+                backgroundImage: "linear-gradient(90deg, #17e0ff 0%, #7c3aff 45%, #ff2fc4 100%)",
+                backgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              fyd
+            </span>
+          </div>
           <span style={{ display: "flex", color: "#14151a" }}>back</span>
         </div>
         <div style={{ display: "flex", marginTop: 26, fontSize: 32, color: "#5b5b68", fontFamily: "Outfit", fontWeight: 800 }}>
