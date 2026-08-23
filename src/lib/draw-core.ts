@@ -2,9 +2,11 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/database.types";
 import { sendEmail, escapeHtml } from "./email";
+import type { PrizeFrequency } from "./prize-copy";
 
-// The prize-draw mechanics, shared by the admin's manual "Mai nyertes
-// sorsolása" button and the nightly cron that draws for every partner.
+// The prize-draw mechanics, shared by the admin's manual "sorsolás" button
+// and the nightly cron that draws for every partner whose period (week or
+// month) just closed.
 //
 // Takes the Supabase client as a parameter rather than creating one: the
 // button runs as the signed-in admin (RLS applies, plus an explicit role check
@@ -15,7 +17,7 @@ import { sendEmail, escapeHtml } from "./email";
 
 export type DrawOutcome =
   | { ok: true; winner: { submissionId: string; email: string | null; winnerId: string }; alreadyDrawn: boolean }
-  | { ok: true; winner: null; alreadyDrawn: false } // no eligible entrants that day
+  | { ok: true; winner: null; alreadyDrawn: false } // no eligible entrants that period
   | { ok: false; error: string };
 
 // 10 hex characters (~1.1e12 codes). The original 5 gave ~1.05M, where the
@@ -29,13 +31,13 @@ function generateWinnerId() {
 async function existingDraw(
   supabase: SupabaseClient<Database>,
   partnerId: string,
-  dateKey: string,
+  periodKey: string,
 ): Promise<DrawOutcome | null> {
   const { data } = await supabase
     .from("prize_draws")
     .select("winner_id, submission_id")
     .eq("partner_id", partnerId)
-    .eq("draw_date", dateKey)
+    .eq("draw_date", periodKey)
     .maybeSingle();
 
   if (!data) return null;
@@ -57,27 +59,37 @@ async function existingDraw(
   };
 }
 
+// Lookback window per frequency, generous enough to comfortably contain a
+// whole period regardless of when in it the cron/admin runs — a week is at
+// most 7-8 days back from "now", a month at most 31, so 9 and 35 leave
+// margin without scanning unboundedly far back.
+const LOOKBACK_HOURS: Record<PrizeFrequency, number> = {
+  weekly: 9 * 24,
+  monthly: 35 * 24,
+};
+
 /**
- * Draws one winner for `partnerId` among entrants whose submission falls on
- * the Budapest calendar day `dateKey` (YYYY-MM-DD). Idempotent: the
+ * Draws one winner for `partnerId` among entrants whose submission falls in
+ * the Budapest period keyed by `periodKey` (YYYY-MM-DD — the Monday of a
+ * week, or the 1st of a month, per `frequency`). Idempotent: the
  * unique(partner_id, draw_date) constraint means a second call returns the
  * winner already drawn instead of issuing a second coupon.
  */
 export async function drawWinnerForPartner(
   supabase: SupabaseClient<Database>,
   partnerId: string,
-  dateKey: string,
-  budapestDateKey: (d?: Date | string) => string,
+  periodKey: string,
+  frequency: PrizeFrequency,
+  periodKeyFn: (d?: Date | string) => string,
+  prizeText: string,
 ): Promise<DrawOutcome> {
-  const already = await existingDraw(supabase, partnerId, dateKey);
+  const already = await existingDraw(supabase, partnerId, periodKey);
   if (already) return already;
 
-  // Coarse 72h pre-filter keeps the scan small and indexed; the exact
-  // "falls on this Budapest calendar date" test happens in JS, because UTC
-  // day-boundary arithmetic is DST-fragile and the candidate set is tiny.
-  // 72h rather than 48h so the nightly cron, which draws for the PREVIOUS
-  // day, still has the whole of that day comfortably inside the window.
-  const since = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+  // Coarse pre-filter keeps the scan small and indexed; the exact "falls in
+  // this Budapest period" test happens in JS, because UTC boundary
+  // arithmetic is DST-fragile and the candidate set is tiny.
+  const since = new Date(Date.now() - LOOKBACK_HOURS[frequency] * 60 * 60 * 1000).toISOString();
   const { data: candidates, error: fetchError } = await supabase
     .from("submissions")
     .select("id, email, created_at")
@@ -88,7 +100,7 @@ export async function drawWinnerForPartner(
 
   if (fetchError) return { ok: false, error: "fetch-failed" };
 
-  const eligible = (candidates ?? []).filter((c) => budapestDateKey(c.created_at) === dateKey);
+  const eligible = (candidates ?? []).filter((c) => periodKeyFn(c.created_at) === periodKey);
   if (eligible.length === 0) return { ok: true, winner: null, alreadyDrawn: false };
 
   const chosen = eligible[Math.floor(Math.random() * eligible.length)];
@@ -102,7 +114,7 @@ export async function drawWinnerForPartner(
   for (let attempt = 0; attempt < 3; attempt++) {
     const { error } = await supabase.from("prize_draws").insert({
       partner_id: partnerId,
-      draw_date: dateKey,
+      draw_date: periodKey,
       submission_id: chosen.id,
       winner_id: winnerId,
     });
@@ -110,7 +122,7 @@ export async function drawWinnerForPartner(
     if (!error) break;
     if (error.code !== "23505") return { ok: false, error: "draw-failed" };
 
-    const raced = await existingDraw(supabase, partnerId, dateKey);
+    const raced = await existingDraw(supabase, partnerId, periodKey);
     if (raced) return raced;
 
     winnerId = generateWinnerId();
@@ -136,6 +148,7 @@ export async function drawWinnerForPartner(
     const { data: partner } = await supabase.from("partners").select("name").eq("id", partnerId).maybeSingle();
     const venue = partner?.name ?? "vendéglátóhelyünk";
     const code = updated.winner_id!;
+    const freqAdj = frequency === "weekly" ? "heti" : "havi";
 
     // Subject deliberately leads with the VENUE, not "Gratulálunk, nyertél!".
     // The old wording — congratulations, "you won", an emoji, from a sender the
@@ -145,31 +158,33 @@ export async function drawWinnerForPartner(
     // enough not to read as bulk.
     emailStatus = await sendEmail({
       to: updated.email,
-      subject: `${venue} — a mai sorsolás nyertese vagy`,
+      subject: `${venue} — a ${freqAdj} sorsolás nyertese vagy`,
       // A plain-text alternative is sent alongside the HTML: its absence is
       // itself a small spam signal, and it is what a watch or a text-only
       // client will show.
       text: [
         `Szia!`,
         ``,
-        `A(z) ${venue} napi sorsolásán te nyertél — köszönjük, hogy értékelted a helyet.`,
+        `A(z) ${venue} ${freqAdj} sorsolásán te nyertél — köszönjük, hogy értékelted a helyet.`,
         ``,
+        `A nyereményed: ${prizeText}`,
         `A kupon-kódod: ${code}`,
         ``,
         `Legközelebbi látogatásodkor mutasd meg ezt a kódot a pultnál. Nincs szükség appra vagy regisztrációra.`,
         ``,
-        `Ezt a levelet azért kaptad, mert a(z) ${venue} értékelése után megadtad az e-mail címed a napi sorsoláshoz. A címedet másra nem használjuk, és hírlevelet nem küldünk.`,
+        `Ezt a levelet azért kaptad, mert a(z) ${venue} értékelése után megadtad az e-mail címed a sorsoláshoz. A címedet másra nem használjuk, és hírlevelet nem küldünk.`,
         `Fydback`,
       ].join("\n"),
       html: `
         <p>Szia!</p>
-        <p>A(z) <strong>${escapeHtml(venue)}</strong> napi sorsolásán te nyertél — köszönjük, hogy értékelted a helyet.</p>
+        <p>A(z) <strong>${escapeHtml(venue)}</strong> ${freqAdj} sorsolásán te nyertél — köszönjük, hogy értékelted a helyet.</p>
+        <p>A nyereményed: <strong>${escapeHtml(prizeText)}</strong></p>
         <p>A kupon-kódod: <strong style="font-size:20px;letter-spacing:1px">${escapeHtml(code)}</strong></p>
         <p>Legközelebbi látogatásodkor mutasd meg ezt a kódot a pultnál. Nincs szükség appra vagy regisztrációra.</p>
         <hr style="border:none;border-top:1px solid #e6e4ee;margin:24px 0">
         <p style="font-size:12px;color:#6b6880;line-height:1.6">
           Ezt a levelet azért kaptad, mert a(z) ${escapeHtml(venue)} értékelése után megadtad az e-mail
-          címed a napi sorsoláshoz. A címedet másra nem használjuk, és hírlevelet nem küldünk.<br>Fydback
+          címed a sorsoláshoz. A címedet másra nem használjuk, és hírlevelet nem küldünk.<br>Fydback
         </p>
       `,
     });

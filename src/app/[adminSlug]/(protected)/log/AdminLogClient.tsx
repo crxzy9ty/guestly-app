@@ -6,6 +6,7 @@ import { drawTodayWinner, type DrawResult } from "@/app/actions/draw";
 import { formatSubmissionId } from "@/lib/format";
 import { downloadCsv } from "@/lib/csv";
 import { formatBudapestTimestamp as fmtTs } from "@/lib/timezone";
+import { frequencyWords } from "@/lib/prize-copy";
 
 export type AdminLogRow = {
   id: string;
@@ -56,7 +57,7 @@ export function AdminLogClient({
   rows,
 }: {
   adminSlug: string;
-  partners: { id: string; name: string }[];
+  partners: { id: string; name: string; prizeFrequency: "weekly" | "monthly" }[];
   selectedPartnerId: string | null;
   aspects: Aspect[];
   rows: AdminLogRow[];
@@ -92,7 +93,9 @@ export function AdminLogClient({
     });
   }, [rows, dateRange, onlyPrize, minScore, now, search]);
 
-  const selectedPartnerName = partners.find((p) => p.id === selectedPartnerId)?.name ?? null;
+  const selectedPartner = partners.find((p) => p.id === selectedPartnerId) ?? null;
+  const selectedPartnerName = selectedPartner?.name ?? null;
+  const { adjective } = frequencyWords(selectedPartner?.prizeFrequency ?? "weekly");
 
   const exportCsv = () => {
     downloadCsv(
@@ -167,15 +170,19 @@ export function AdminLogClient({
         <div className="mb-4 rounded-xl border border-line bg-paper p-4">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div>
-              <div className="text-sm font-bold text-ink">Napi sorsolás — {selectedPartnerName}</div>
-              {/* Says "calendar day", not "last 24 hours": the draw filters on
-                  the Budapest calendar date, so a 23:50 and a 00:10 entrant are
-                  in different draws — which a rolling 24h window would not do,
-                  and the old wording promised. */}
+              <div className="text-sm font-bold text-ink capitalize">{adjective} sorsolás — {selectedPartnerName}</div>
+              {/* Says "Budapest period", not "last N hours": the draw filters
+                  on the Budapest calendar week/month, so an entrant just
+                  before vs. just after the boundary lands in different draws
+                  — which a rolling window would not do. "Időszak" (period)
+                  rather than trying to grammatically inflect "hét"/"hónap"
+                  (week/month) here, which needs a different case suffix each
+                  — "heti"/"havi" as a plain adjective in the title doesn't
+                  have that problem, but the body text would. */}
               <div className="text-[11.5px] text-slate">
-                A sorsolás minden éjjel automatikusan lefut az előző napra — ezt a gombot csak akkor
-                kell használnod, ha a mai napot már most le akarod zárni. Naponta egyszer sorsolható;
-                újrakattintásra a már kisorsolt nyertest mutatja.
+                A sorsolás automatikusan lefut, amint egy időszak lezárul — ezt a gombot csak akkor
+                kell használnod, ha a jelenlegi időszakot már most le akarod zárni. Időszakonként
+                egyszer sorsolható; újrakattintásra a már kisorsolt nyertest mutatja.
               </div>
             </div>
             <button
@@ -187,19 +194,19 @@ export function AdminLogClient({
               }
               className="h-9 rounded-lg bg-ink px-4 text-xs font-bold text-white disabled:opacity-50"
             >
-              {isDrawing ? "Sorsolás…" : "🎲 Mai nyertes sorsolása"}
+              {isDrawing ? "Sorsolás…" : `🎲 ${adjective.charAt(0).toUpperCase() + adjective.slice(1)} nyertes sorsolása`}
             </button>
           </div>
           {drawResult && (
             <div className="mt-3 border-t border-line pt-3 text-xs">
               {drawResult.ok && drawResult.winner ? (
                 <span className="text-ink">
-                  {drawResult.alreadyDrawn ? "Ma már kisorsoltuk a nyertest: " : "✓ Nyertes: "}
+                  {drawResult.alreadyDrawn ? "Ebben az időszakban már kisorsoltuk a nyertest: " : "✓ Nyertes: "}
                   <span className="font-bold text-violet">{drawResult.winner.winnerId}</span>
                   {drawResult.winner.email && <> — <strong>{drawResult.winner.email}</strong></>}
                 </span>
               ) : drawResult.ok ? (
-                <span className="text-slate">Nincs ma jelentkező ehhez az egységhez — nincs kit sorsolni.</span>
+                <span className="text-slate">Nincs jelentkező ehhez az egységhez ebben az időszakban — nincs kit sorsolni.</span>
               ) : (
                 <span className="text-magenta">Hiba történt a sorsolás közben, próbáld újra.</span>
               )}

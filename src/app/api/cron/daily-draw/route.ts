@@ -1,22 +1,24 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { drawWinnerForPartner } from "@/lib/draw-core";
-import { budapestDateKey } from "@/lib/timezone";
+import { budapestDateKey, budapestWeekday, budapestWeekStartKey, budapestMonthStartKey } from "@/lib/timezone";
+import { resolveContent } from "@/lib/content";
+import { resolvePrizeText } from "@/lib/prize-copy";
 
-// Nightly prize draw for every partner.
+// Nightly check for every partner — draws only for whichever partners'
+// period (week or month, per partners.prize_frequency) just closed.
 //
-// Why this exists: the draw was manual, one click per partner per day. At
-// 20-30 partners that is 20-30 clicks every single day, and a day missed means
-// guests who gave their email for a draw that never happened — which
-// undermines the exact promise the landing page makes.
+// Why nightly rather than only-on-reset-days: a single cron schedule that
+// runs every night and internally decides who's due today is simpler and
+// more robust than juggling separate weekly/monthly Vercel cron entries, and
+// it's the exact same "did yesterday complete a period" question either way.
 //
-// WHY IT DRAWS YESTERDAY, NOT TODAY: Vercel schedules crons in UTC, while
-// eligibility is a Budapest calendar day. Budapest is UTC+1 or UTC+2 depending
+// WHY IT DRAWS FOR YESTERDAY, NOT TODAY: Vercel schedules crons in UTC, while
+// eligibility is Budapest calendar time. Budapest is UTC+1 or UTC+2 depending
 // on DST, so any "late evening" UTC slot lands on a different Budapest date in
-// summer than in winter — and an end-of-day draw would permanently exclude
-// anyone who rated after it ran. Drawing the PREVIOUS complete day from the
-// small hours removes both problems: the day is definitely over, every entrant
-// is included, and no DST edge case can shift which day is meant.
+// summer than in winter — and drawing for the day/period still in progress
+// would permanently exclude anyone who rated after it ran. Drawing the
+// PREVIOUS complete period from the small hours removes both problems.
 //
 // Idempotent by construction: unique(partner_id, draw_date) means a re-run (a
 // retry, a manual trigger, two overlapping invocations) reports the existing
@@ -25,8 +27,8 @@ import { budapestDateKey } from "@/lib/timezone";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-function yesterdayBudapestKey() {
-  return budapestDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
+function yesterday() {
+  return new Date(Date.now() - 24 * 60 * 60 * 1000);
 }
 
 export async function GET(request: Request) {
@@ -43,14 +45,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const dateKey = yesterdayBudapestKey();
   const supabase = createAdminClient();
 
-  const { data: partners, error } = await supabase.from("partners").select("id, name");
-  if (error) {
-    console.error("[cron/daily-draw] could not list partners:", error.message);
+  const [{ data: partners, error: partnersError }, { data: contentRow }] = await Promise.all([
+    supabase.from("partners").select("id, name, prize_frequency, prize_description"),
+    supabase.from("content_settings").select("content").eq("id", 1).maybeSingle(),
+  ]);
+
+  if (partnersError) {
+    console.error("[cron/daily-draw] could not list partners:", partnersError.message);
     return NextResponse.json({ error: "partner-list-failed" }, { status: 500 });
   }
+
+  const defaultPrizeDescription = resolveContent(contentRow?.content).defaultPrizeDescription;
+  const today = new Date();
+  const isMonday = budapestWeekday(today) === 1;
+  const isFirstOfMonth = budapestDateKey(today).endsWith("-01");
 
   const results: { partner: string; outcome: string; winnerId?: string }[] = [];
 
@@ -58,8 +68,16 @@ export async function GET(request: Request) {
   // of parallel sends is the fastest way to trip Resend's rate limit and lose
   // winner notifications. A handful of partners takes a second or two.
   for (const partner of partners ?? []) {
+    const frequency = partner.prize_frequency === "monthly" ? "monthly" : "weekly";
+    const dueToday = frequency === "weekly" ? isMonday : isFirstOfMonth;
+    if (!dueToday) continue;
+
+    const periodKeyFn = frequency === "weekly" ? budapestWeekStartKey : budapestMonthStartKey;
+    const periodKey = periodKeyFn(yesterday());
+    const prizeText = resolvePrizeText(partner.prize_description, defaultPrizeDescription);
+
     try {
-      const outcome = await drawWinnerForPartner(supabase, partner.id, dateKey, budapestDateKey);
+      const outcome = await drawWinnerForPartner(supabase, partner.id, periodKey, frequency, periodKeyFn, prizeText);
       if (!outcome.ok) {
         results.push({ partner: partner.name, outcome: `error:${outcome.error}` });
       } else if (!outcome.winner) {
@@ -79,6 +97,6 @@ export async function GET(request: Request) {
     }
   }
 
-  console.log(`[cron/daily-draw] ${dateKey}:`, JSON.stringify(results));
-  return NextResponse.json({ date: dateKey, partners: results.length, results });
+  console.log(`[cron/daily-draw] ${budapestDateKey(today)}:`, JSON.stringify(results));
+  return NextResponse.json({ date: budapestDateKey(today), partners: results.length, results });
 }

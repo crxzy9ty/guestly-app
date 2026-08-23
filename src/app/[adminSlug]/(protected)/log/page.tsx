@@ -15,7 +15,7 @@ export default async function AdminLogPage({
 
   const { data: partners } = await supabase
     .from("partners")
-    .select("id, name, question_set_id")
+    .select("id, name, question_set_id, prize_frequency")
     .order("name");
 
   const safePartners = partners ?? [];
@@ -63,7 +63,7 @@ export default async function AdminLogPage({
       <h1 className="mb-6 text-2xl font-bold tracking-tight text-ink">Napló</h1>
       <AdminLogClient
         adminSlug={adminSlug}
-        partners={safePartners.map((p) => ({ id: p.id, name: p.name }))}
+        partners={safePartners.map((p) => ({ id: p.id, name: p.name, prizeFrequency: p.prize_frequency }))}
         selectedPartnerId={selectedPartner?.id ?? null}
         aspects={aspects ?? []}
         rows={rows}

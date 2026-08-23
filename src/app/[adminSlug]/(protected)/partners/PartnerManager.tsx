@@ -22,6 +22,8 @@ export type Partner = {
   subscription_end: string | null;
   open_hour: number | null;
   close_hour: number | null;
+  prize_frequency: "weekly" | "monthly";
+  prize_description: string | null;
   // Engagement, from public.partner_activity. Read-only here.
   lastOwnerSeenAt: string | null;
   lastReviewAt: string | null;
@@ -148,6 +150,32 @@ function PartnerFields({ defaults }: { defaults?: Partial<Partner> }) {
       <p className="-mt-1 text-[11px] leading-relaxed text-slate">
         Mindkettő opcionális — üresen hagyva a hőtérkép 8-20 óráig mutatja az adatokat. Ha éjfél után zár, pl.
         18 és 2, azt is helyesen kezeli.
+      </p>
+      <div className="grid grid-cols-2 gap-2.5">
+        <div>
+          <label className={labelClass}>Nyereményjáték gyakorisága</label>
+          <select
+            name="prize_frequency"
+            defaultValue={defaults?.prize_frequency ?? "weekly"}
+            className={inputClass}
+          >
+            <option value="weekly">Heti</option>
+            <option value="monthly">Havi</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Egyedi nyeremény</label>
+          <input
+            name="prize_description"
+            defaultValue={defaults?.prize_description ?? ""}
+            placeholder="Ha üresen hagyod, a Fydback alap nyereménye jár"
+            className={inputClass}
+          />
+        </div>
+      </div>
+      <p className="-mt-1 text-[11px] leading-relaxed text-slate">
+        Ha havi módról hetire váltasz, a hónap eddigi jelentkezői kimaradhatnak a sorsolásból — érdemes előbb
+        lezárni a folyamatban lévő időszakot a Naplóban.
       </p>
     </div>
   );

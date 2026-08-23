@@ -38,6 +38,12 @@ export type MarketingContent = {
   footerPrivacy: string;
   footerImprint: string;
   footerCopyright: string;
+
+  // Shown to a guest (and used in the winner email) whenever a partner
+  // hasn't typed in their own prize on the partner's admin record — see
+  // src/lib/prize-copy.ts and the "Egyedi nyeremény" field in
+  // PartnerManager.tsx.
+  defaultPrizeDescription: string;
 };
 
 // Mirrors the row seeded by supabase/migrations/..._demo_requests_and_content_settings.sql.
@@ -98,7 +104,7 @@ export const DEFAULT_CONTENT: MarketingContent = {
     },
     {
       title: "A vendég 30 másodperc alatt értékel",
-      body: "Nincs kellemetlen szituáció, nem kell odahívni senkit — csak öt gyors kérdés. Cserébe részt vesz egy napi nyereményjátékban is, amit te állítasz be.",
+      body: "Nincs kellemetlen szituáció, nem kell odahívni senkit — csak öt gyors kérdés. Cserébe részt vesz egy nyereményjátékban is, amit te állítasz be.",
     },
     {
       title: "Te látod, mi történik óráról órára",
@@ -137,6 +143,8 @@ export const DEFAULT_CONTENT: MarketingContent = {
   footerPrivacy: "Adatkezelési tájékoztató",
   footerImprint: "Impresszum",
   footerCopyright: "© 2026 Fydback",
+
+  defaultPrizeDescription: "Fydback meglepetés-nyeremény",
 };
 
 // A stored content_settings row can predate fields added to MarketingContent

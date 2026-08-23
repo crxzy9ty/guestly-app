@@ -252,6 +252,15 @@ export function ContentEditor({ adminSlug, initial }: { adminSlug: string; initi
       </div>
 
       <div className={boxClass}>
+        <div className="mb-3 text-sm font-bold text-ink">Nyereményjáték</div>
+        <label className={labelClass}>Alapértelmezett nyeremény</label>
+        <p className="mb-2 text-[11.5px] leading-relaxed text-slate">
+          Ez jelenik meg annál a partnernél, aki a saját partner-adatlapján nem ad meg egyedi nyereményt.
+        </p>
+        <input value={draft.defaultPrizeDescription} onChange={set("defaultPrizeDescription")} className={inputClass} />
+      </div>
+
+      <div className={boxClass}>
         <div className="mb-3 text-sm font-bold text-ink">Lábléc</div>
         <div className="grid grid-cols-3 gap-2.5">
           <div>

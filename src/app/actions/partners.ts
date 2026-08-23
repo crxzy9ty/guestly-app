@@ -30,6 +30,9 @@ function fields(formData: FormData) {
   const openHour = hour("open_hour");
   const closeHour = hour("close_hour");
 
+  const prizeFrequencyRaw = String(formData.get("prize_frequency") ?? "");
+  const prizeFrequency: "weekly" | "monthly" = prizeFrequencyRaw === "monthly" ? "monthly" : "weekly";
+
   return {
     name: String(formData.get("name") ?? "").trim(),
     address: str("address"),
@@ -42,6 +45,8 @@ function fields(formData: FormData) {
     subscription_end: subscriptionEnd,
     open_hour: openHour,
     close_hour: closeHour,
+    prize_frequency: prizeFrequency,
+    prize_description: str("prize_description"),
   };
 }
 

@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { submitReview } from "@/app/actions/reviews";
+import { frequencyWords, prizeConfirmedBody, type PrizeFrequency } from "@/lib/prize-copy";
 
 type Aspect = { key: string; label: string; icon: string | null };
 
@@ -14,11 +15,15 @@ const GRAD = "linear-gradient(135deg, #22E5EA 0%, #5B21B6 55%, #E619C8 100%)";
 export function GuestReviewFlow({
   partnerId,
   partnerName,
+  prizeFrequency,
+  prizeText,
   aspects,
   token,
 }: {
   partnerId: string;
   partnerName: string;
+  prizeFrequency: PrizeFrequency;
+  prizeText: string;
   aspects: Aspect[];
   // Minted server-side per page load and single-use — see
   // src/lib/review-token.ts. Passed straight back with the submission.
@@ -195,10 +200,10 @@ export function GuestReviewFlow({
         )}
         <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-5 text-left">
           <div className="mb-1.5 text-2xl">🎁</div>
-          <div className="mb-1.5 text-sm font-bold text-white">Szeretnél nyerni egy ingyen kávét?</div>
+          <div className="mb-1.5 text-sm font-bold text-white">Szeretnél részt venni a nyereményjátékunkban?</div>
           <p className="mb-4 text-xs leading-relaxed text-white/60">
-            Add meg az e-mail címed a sorsoláshoz. Ez teljesen opcionális — az értékelésed enélkül is
-            beérkezett.
+            A nyeremény: {prizeText}. Add meg az e-mail címed a jelentkezéshez — ez teljesen opcionális,
+            az értékelésed enélkül is beérkezett.
           </p>
           <button
             onClick={() => setScreen("prizeEmail")}
@@ -221,14 +226,15 @@ export function GuestReviewFlow({
 
   if (screen === "prizeEmail") {
     const canSubmit = email.includes("@") && consent;
+    const { adjective, everyPeriod, periodClose } = frequencyWords(prizeFrequency);
     return (
       <Centered>
         <div className="mb-3 text-3xl">🎁</div>
         <h1 className="mb-2 text-lg font-bold text-ink">Add meg az e-mail címed</h1>
         <p className="mb-4 text-xs leading-relaxed text-slate">
-          Minden nap egy vendég nyer egy ingyen kávét az aznap értékelők között, a sorsolás másnap
-          reggel történik — csak ehhez használjuk az e-mail címed, máshova nem kerül, nem küldünk
-          hírlevelet.
+          {adjective.charAt(0).toUpperCase() + adjective.slice(1)} nyereményjátékunkban {everyPeriod} egy
+          vendég nyer: {prizeText}. A jelentkezők közül {periodClose} után sorsolunk — csak ehhez
+          használjuk az e-mail címed, máshova nem kerül, nem küldünk hírlevelet.
         </p>
         <input
           type="email"
@@ -245,7 +251,7 @@ export function GuestReviewFlow({
             className="mt-0.5"
           />
           <span>
-            Hozzájárulok, hogy az e-mail címemet a napi nyereményjáték lebonyolításához (a nyertes
+            Hozzájárulok, hogy az e-mail címemet a nyereményjáték lebonyolításához (a nyertes
             értesítéséhez) felhasználjátok. Részletek az{" "}
             <Link href="/adatvedelem" target="_blank" className="font-semibold text-ink underline">
               adatkezelési tájékoztatóban
@@ -290,13 +296,7 @@ export function GuestReviewFlow({
       <Centered dark>
         <div className="mb-2 text-4xl">✓</div>
         <h1 className="mb-2 text-xl font-bold text-white">Sikeres jelentkezés!</h1>
-        {/* "Másnap reggel", not "a mai nap végén": the draw runs in the small
-            hours for the completed previous day, so that nobody who rates late
-            in the evening is left out of it. */}
-        <p className="mb-3 text-sm leading-relaxed text-white/70">
-          A mai nap összes értékelője között másnap reggel sorsolunk. Ha nyersz, e-mailben kapsz egy
-          egyedi kupon-kódot.
-        </p>
+        <p className="mb-3 text-sm leading-relaxed text-white/70">{prizeConfirmedBody(prizeFrequency)}</p>
         {/* Worth saying out loud: a first message from an unfamiliar sender
             lands in spam often enough that a winner who never thinks to look
             there simply doesn't get their prize. */}

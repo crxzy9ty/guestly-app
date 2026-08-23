@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { mintReviewToken } from "@/lib/review-token";
+import { resolveContent } from "@/lib/content";
+import { resolvePrizeText, prizeConfirmedBody } from "@/lib/prize-copy";
 import { GuestReviewFlow } from "./GuestReviewFlow";
 
 // Rendered per request so every visitor gets a fresh, single-use token; a
@@ -15,11 +17,14 @@ export default async function GuestReviewPage({
   const { partnerId } = await params;
   const supabase = await createClient();
 
-  const { data: partner } = await supabase
-    .from("partners")
-    .select("id, name, question_set_id, alert_threshold")
-    .eq("id", partnerId)
-    .maybeSingle();
+  const [{ data: partner }, { data: contentRow }] = await Promise.all([
+    supabase
+      .from("partners")
+      .select("id, name, question_set_id, alert_threshold, prize_frequency, prize_description")
+      .eq("id", partnerId)
+      .maybeSingle(),
+    supabase.from("content_settings").select("content").eq("id", 1).maybeSingle(),
+  ]);
 
   if (!partner) {
     return (
@@ -49,6 +54,9 @@ export default async function GuestReviewPage({
     );
   }
 
+  const frequency = partner.prize_frequency === "monthly" ? "monthly" : "weekly";
+  const prizeText = resolvePrizeText(partner.prize_description, resolveContent(contentRow?.content).defaultPrizeDescription);
+
   const cookieStore = await cookies();
   const dedupCookie = cookieStore.get(`gst_rev_${partnerId}`)?.value;
 
@@ -67,10 +75,7 @@ export default async function GuestReviewPage({
         <Centered dark>
           <div className="mb-2 text-4xl">✓</div>
           <h1 className="mb-2 text-xl font-bold text-white">Sikeres jelentkezés!</h1>
-          <p className="text-sm text-white/70">
-            A mai nap értékelői közül másnap reggel sorsolunk. Ha nyersz, e-mailben kapsz egy egyedi
-            kupon-kódot.
-          </p>
+          <p className="text-sm text-white/70">{prizeConfirmedBody(frequency)}</p>
         </Centered>
       );
     }
@@ -101,6 +106,8 @@ export default async function GuestReviewPage({
     <GuestReviewFlow
       partnerId={partner.id}
       partnerName={partner.name}
+      prizeFrequency={frequency}
+      prizeText={prizeText}
       aspects={aspects}
       token={mintReviewToken(partner.id)}
     />

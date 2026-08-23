@@ -49,6 +49,12 @@ export interface Database {
           // open_hour means the venue is open overnight (e.g. 18 -> 2).
           open_hour: number | null;
           close_hour: number | null;
+          // How often this partner's prize draw runs. prize_description is
+          // this partner's own prize text; null means they haven't set one,
+          // so guest-facing copy falls back to content_settings'
+          // defaultPrizeDescription (src/lib/prize-copy.ts resolves this).
+          prize_frequency: "weekly" | "monthly";
+          prize_description: string | null;
           created_at: string;
           updated_at: string;
         };
