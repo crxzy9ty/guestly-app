@@ -69,7 +69,7 @@ function Dotmark({ size = "sm" }: { size?: "sm" | "lg" }) {
 // references that name).
 function HeroMark() {
   return (
-    <div className="mb-8 inline-flex items-end gap-2.5">
+    <div className="mt-4 mb-4 inline-flex items-end gap-2.5">
       <span
         className="h-3.5 w-3.5 rounded-full bg-[#17e0ff] animate-[dot-bob_3.6s_ease-in-out_infinite] motion-reduce:animate-none"
       />
