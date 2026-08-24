@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail, escapeHtml } from "@/lib/email";
 
 export type InviteAdminResult =
   | { ok: true; alreadyExisted: boolean; tempPassword?: string; emailSkipped?: boolean }
@@ -46,18 +47,33 @@ export async function inviteAdmin(
   const admin = createAdminClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-  const { data: invited, error: inviteError } = skipEmail
+  // generateLink({ type: "invite" }) creates the account and hands back the
+  // activation link WITHOUT emailing anyone — unlike inviteUserByEmail, which
+  // always sends Supabase's own built-in mail (a shared sender with poor
+  // spam reputation, and — since it also generates invites for
+  // inviteOwnerToPartner — the exact same generic email an owner gets, with
+  // no way to tell them apart). Sending it ourselves via Resend, on our own
+  // verified domain, with copy specific to "this is an admin account", fixes
+  // both problems at once.
+  const { data: generated, error: inviteError } = skipEmail
     ? { data: null, error: null }
-    : await admin.auth.admin.inviteUserByEmail(email, {
-        data: { role: "admin" },
-        redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
+    : await admin.auth.admin.generateLink({
+        type: "invite",
+        email,
+        options: {
+          data: { role: "admin" },
+          redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
+        },
       });
 
-  let userId = invited?.user?.id;
+  let userId = generated?.user?.id;
   let alreadyExisted = false;
   let tempPassword: string | undefined;
 
   if (inviteError || !userId) {
+    // Supabase refuses to generate an invite link for an email that already
+    // has an account — that's expected for an admin who's been invited
+    // before. Look them up and treat it as success (no new email needed).
     const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id, role")
@@ -79,9 +95,9 @@ export async function inviteAdmin(
       userId = existingProfile.id;
       alreadyExisted = true;
     } else {
-      // Same fallback as inviteOwnerToPartner: Supabase's default mailer caps
-      // at a handful of auth emails per hour, so create the account directly
-      // with a temporary password the caller can relay out of band.
+      // Same fallback as inviteOwnerToPartner: skipEmail, or a genuine
+      // generateLink failure — create the account directly with a temporary
+      // password the caller can relay out of band.
       const password = generateTempPassword();
       const { data: created, error: createError } = await admin.auth.admin.createUser({
         email,
@@ -96,6 +112,36 @@ export async function inviteAdmin(
       userId = created.user.id;
       tempPassword = password;
     }
+  } else if (generated?.properties.action_link) {
+    await sendEmail({
+      to: email,
+      subject: "Meghívó a Fydback admin felületére",
+      text: [
+        "Meghívást kaptál a Fydback admin felületére.",
+        "",
+        `Fiók aktiválása és jelszó beállítása: ${generated.properties.action_link}`,
+        "",
+        "Ha nem számítottál erre a meghívóra, nyugodtan hagyd figyelmen kívül ezt az e-mailt.",
+      ].join("\n"),
+      html: `
+        <h2 style="margin:0 0 16px;font-size:20px;color:#15131c;">Meghívást kaptál a Fydback admin felületére</h2>
+        <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#15131c;">
+          Kattints az alábbi gombra a fiókod aktiválásához és a jelszavad beállításához:
+        </p>
+        <p style="margin:0 0 24px;">
+          <a href="${escapeHtml(generated.properties.action_link)}" style="display:inline-block;background:#15131c;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">
+            Fiók aktiválása
+          </a>
+        </p>
+        <p style="margin:0;font-size:13px;color:#6b6878;">
+          Ha nem számítottál erre a meghívóra, nyugodtan hagyd figyelmen kívül ezt az e-mailt.
+        </p>
+        <hr style="border:none;border-top:1px solid #e6e4ee;margin:24px 0">
+        <p style="font-size:12px;color:#6b6880;margin:0;">
+          Ezt a levelet azért kaptad, mert valaki meghívott a Fydback admin felületére.
+        </p>
+      `,
+    });
   }
 
   revalidatePath(`/${adminSlug}/settings`);

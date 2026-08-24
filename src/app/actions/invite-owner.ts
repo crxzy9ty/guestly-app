@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail, escapeHtml } from "@/lib/email";
 
 export type InviteOwnerResult =
   | { ok: true; alreadyExisted: boolean; tempPassword?: string; emailSkipped?: boolean }
@@ -52,26 +53,33 @@ export async function inviteOwnerToPartner(
   const admin = createAdminClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-  // When skipping email, don't call inviteUserByEmail at all — calling it and
-  // ignoring the result would still send the message. Falling through with a
-  // null userId reuses the existing "already has an account?" / createUser
-  // branch below, so both paths stay one code path.
-  const { data: invited, error: inviteError } = skipEmail
+  // generateLink({ type: "invite" }) creates the account and hands back the
+  // activation link WITHOUT emailing anyone — unlike inviteUserByEmail, which
+  // always sends Supabase's own built-in mail: a shared sender with poor
+  // spam reputation, and — since inviteAdmin generates the exact same kind
+  // of link — indistinguishable from an admin invite. Sending it ourselves
+  // via Resend, on our own verified domain, with copy that names the venue,
+  // fixes both problems at once.
+  const { data: generated, error: inviteError } = skipEmail
     ? { data: null, error: null }
-    : await admin.auth.admin.inviteUserByEmail(email, {
-        data: { role: "owner" },
-        redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
+    : await admin.auth.admin.generateLink({
+        type: "invite",
+        email,
+        options: {
+          data: { role: "owner" },
+          redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
+        },
       });
 
-  let userId = invited?.user?.id;
+  let userId = generated?.user?.id;
   let alreadyExisted = false;
   let tempPassword: string | undefined;
 
   if (inviteError || !userId) {
-    // Supabase refuses to re-invite an email that already has an account —
-    // that's expected for an owner who already manages another venue. Look
-    // them up and just add the new partner link instead of treating it as
-    // a failure.
+    // Supabase refuses to generate an invite link for an email that already
+    // has an account — that's expected for an owner who already manages
+    // another venue. Look them up and just add the new partner link instead
+    // of treating it as a failure.
     const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id, role")
@@ -85,12 +93,12 @@ export async function inviteOwnerToPartner(
       userId = existingProfile.id;
       alreadyExisted = true;
     } else {
-      // Either the caller asked to skip email outright, or the invite failed —
-      // most likely because the invite EMAIL couldn't be sent (Supabase's
-      // default mailer allows only ~2 auth emails/hour, easy to hit, and it
-      // will keep happening for real customers until a verified sending domain
-      // is configured). Both want the same outcome: create the account
-      // directly with a temporary password the admin relays manually.
+      // Either the caller asked to skip email outright, or generateLink
+      // failed — most likely Supabase's default mailer/rate limits, though
+      // that no longer applies to the link itself now that we send it via
+      // Resend; kept as a fallback for a genuine API error. Both want the
+      // same outcome: create the account directly with a temporary password
+      // the admin relays manually.
       const password = generateTempPassword();
       const { data: created, error: createError } = await admin.auth.admin.createUser({
         email,
@@ -105,6 +113,40 @@ export async function inviteOwnerToPartner(
       userId = created.user.id;
       tempPassword = password;
     }
+  } else if (generated?.properties.action_link) {
+    const { data: partner } = await supabase.from("partners").select("name").eq("id", partnerId).maybeSingle();
+    const partnerName = partner?.name ?? "a Fydback fiókodhoz";
+
+    await sendEmail({
+      to: email,
+      subject: `Meghívó a Fydback fiókodhoz — ${partnerName}`,
+      text: [
+        `Meghívást kaptál, hogy hozzáférj a(z) ${partnerName} Fydback vendégelégedettség-adataihoz.`,
+        "",
+        `Fiók aktiválása és jelszó beállítása: ${generated.properties.action_link}`,
+        "",
+        "Ha nem számítottál erre a meghívóra, nyugodtan hagyd figyelmen kívül ezt az e-mailt.",
+      ].join("\n"),
+      html: `
+        <h2 style="margin:0 0 16px;font-size:20px;color:#15131c;">Meghívást kaptál a Fydback fiókodhoz</h2>
+        <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#15131c;">
+          Hozzáférést kaptál a(z) <strong>${escapeHtml(partnerName)}</strong> vendégelégedettség-adataihoz.
+          Kattints az alábbi gombra a fiókod aktiválásához és a jelszavad beállításához:
+        </p>
+        <p style="margin:0 0 24px;">
+          <a href="${escapeHtml(generated.properties.action_link)}" style="display:inline-block;background:#15131c;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">
+            Fiók aktiválása
+          </a>
+        </p>
+        <p style="margin:0;font-size:13px;color:#6b6878;">
+          Ha nem számítottál erre a meghívóra, nyugodtan hagyd figyelmen kívül ezt az e-mailt.
+        </p>
+        <hr style="border:none;border-top:1px solid #e6e4ee;margin:24px 0">
+        <p style="font-size:12px;color:#6b6880;margin:0;">
+          Ezt a levelet azért kaptad, mert valaki meghívott a Fydback rendszerébe.
+        </p>
+      `,
+    });
   }
 
   const { error: linkError } = await supabase.from("partner_members").insert({ partner_id: partnerId, user_id: userId! });
