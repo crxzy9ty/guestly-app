@@ -33,9 +33,11 @@ function SubmitButton() {
 //      (fragments never leave the browser). Without the effect below, that
 //      left invited users on a page with no session, `updatePassword` failing
 //      silently, and no working way forward except "Elfelejtett jelszó".
-// The Supabase browser client auto-detects a `#access_token` fragment on
-// creation and turns it into the same session cookie case 1 already has —
-// so creating it here, once, covers case 2 without touching case 1 at all.
+// The effect below reads that fragment itself and calls setSession()
+// explicitly — NOT the browser client's automatic detectSessionInUrl, which
+// only recognizes a `?code=` (see the effect's own comment for why) — turning
+// it into the same session cookie case 1 already has, so covering case 2 here
+// doesn't touch case 1 at all.
 export default function SetPasswordPage() {
   const [state, formAction] = useActionState(updatePassword, initialState);
   const [ready, setReady] = useState(false);
@@ -54,14 +56,38 @@ export default function SetPasswordPage() {
       return;
     }
     const supabase = createClient();
-    supabase.auth.getSession().then(() => {
+
+    const finish = () => {
       // Drops the spent #access_token=… from the address bar so a refresh
       // or an accidentally-reshared URL can't resubmit it.
       if (window.location.hash) {
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
       }
       setReady(true);
-    });
+    };
+
+    // @supabase/ssr's browser client hardcodes flowType: "pkce" (see its own
+    // createBrowserClient.js) — its automatic detectSessionInUrl only ever
+    // looks for a `?code=` query param, never a `#access_token=` fragment.
+    // It silently finds nothing here and resolves getSession() to null,
+    // which an earlier version of this effect treated as "done" regardless
+    // — rendering the form with no session ever established, so submitting
+    // it always failed server-side with "Auth session missing!". Reading
+    // the fragment ourselves and calling setSession() explicitly sidesteps
+    // that detection path entirely; it isn't heuristic, so flowType doesn't
+    // matter.
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+
+    if (access_token && refresh_token) {
+      supabase.auth.setSession({ access_token, refresh_token }).then(finish);
+    } else {
+      // No fragment tokens — either the PKCE `?code=` path already set the
+      // session server-side (password reset), or this is a stray visit with
+      // no session at all. Either way there's nothing for us to extract.
+      supabase.auth.getSession().then(finish);
+    }
   }, []);
 
   if (!ready) {
