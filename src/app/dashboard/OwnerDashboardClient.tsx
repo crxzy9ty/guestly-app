@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LogTable, type LogRow } from "./LogTable";
+import { MessageAdmin, type PartnerMessageRow } from "./MessageAdmin";
 import { HelpPanel } from "@/app/HelpPanel";
 import { VenueInsights } from "@/app/VenueInsights";
 import { ownerHelpFaqs } from "@/lib/help-content";
@@ -11,6 +12,7 @@ import type { TrendPoint } from "@/lib/dashboard/trend";
 import type { Suggestion } from "@/lib/dashboard/suggestions";
 
 export function OwnerDashboardClient({
+  partnerId,
   aspectAverages,
   grids,
   hours,
@@ -22,7 +24,9 @@ export function OwnerDashboardClient({
   logRows,
   aspects,
   period,
+  messages,
 }: {
+  partnerId: string;
   aspectAverages: AspectAverage[];
   grids: Record<string, HeatmapGrid>;
   hours: number[];
@@ -34,8 +38,9 @@ export function OwnerDashboardClient({
   logRows: LogRow[];
   aspects: { key: string; label: string }[];
   period: PeriodValue;
+  messages: PartnerMessageRow[];
 }) {
-  const [view, setView] = useState<"overview" | "log" | "help">("overview");
+  const [view, setView] = useState<"overview" | "log" | "message" | "help">("overview");
 
   return (
     <div>
@@ -52,6 +57,7 @@ export function OwnerDashboardClient({
           [
             ["overview", "Áttekintés"],
             ["log", "Napló"],
+            ["message", "Üzenet"],
             ["help", "Súgó"],
           ] as const
         ).map(([k, l]) => (
@@ -69,6 +75,8 @@ export function OwnerDashboardClient({
         <HelpPanel faqs={ownerHelpFaqs} />
       ) : view === "log" ? (
         <LogTable rows={logRows} aspects={aspects} />
+      ) : view === "message" ? (
+        <MessageAdmin partnerId={partnerId} messages={messages} />
       ) : (
         // Aspect tiles + alert + heatmap live in VenueInsights so the admin
         // venue detail page renders the exact same panel from the same code.

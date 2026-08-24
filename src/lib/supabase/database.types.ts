@@ -84,6 +84,30 @@ export interface Database {
           },
         ];
       };
+      partner_messages: {
+        Row: {
+          id: string;
+          partner_id: string;
+          sender_user_id: string | null;
+          message: string;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["partner_messages"]["Row"]> & {
+          partner_id: string;
+          message: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["partner_messages"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "partner_messages_partner_id_fkey";
+            columns: ["partner_id"];
+            isOneToOne: false;
+            referencedRelation: "partners";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       question_sets: {
         Row: {
           id: string;

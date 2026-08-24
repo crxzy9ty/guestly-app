@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ContentEditor } from "./ContentEditor";
 import { DemoRequestsList, type DemoRequestRow } from "./DemoRequestsList";
+import { PartnerMessagesList, type PartnerMessageRow } from "./PartnerMessagesList";
 import { QuestionSetsManager, type QuestionSet, type Aspect } from "./QuestionSetsManager";
 import { PartnerAssignment } from "./PartnerAssignment";
 import { AdminsManager, type AdminRow } from "./AdminsManager";
@@ -18,6 +19,7 @@ export function SettingsView({
   aspects,
   partners,
   admins,
+  partnerMessages,
   currentUserId,
   canDeleteAdmins,
 }: {
@@ -28,16 +30,20 @@ export function SettingsView({
   aspects: Aspect[];
   partners: Partner[];
   admins: AdminRow[];
+  partnerMessages: PartnerMessageRow[];
   currentUserId: string;
   canDeleteAdmins: boolean;
 }) {
-  const [tab, setTab] = useState<"sets" | "assign" | "content" | "demos" | "admins">("sets");
+  const [tab, setTab] = useState<"sets" | "assign" | "content" | "demos" | "messages" | "admins">("sets");
+
+  const unreadCount = partnerMessages.filter((m) => !m.is_read).length;
 
   const tabs = [
     ["sets", "Kérdéscsoportok"],
     ["assign", "Hozzárendelés"],
     ["content", "Tartalom szerkesztése"],
     ["demos", `Demó kérések (${demoRequests.length})`],
+    ["messages", `Üzenetek (${unreadCount})`],
     ["admins", `Adminok (${admins.length})`],
   ] as const;
 
@@ -59,6 +65,7 @@ export function SettingsView({
       {tab === "assign" && <PartnerAssignment adminSlug={adminSlug} questionSets={questionSets} partners={partners} />}
       {tab === "content" && <ContentEditor adminSlug={adminSlug} initial={content} />}
       {tab === "demos" && <DemoRequestsList adminSlug={adminSlug} requests={demoRequests} />}
+      {tab === "messages" && <PartnerMessagesList adminSlug={adminSlug} messages={partnerMessages} />}
       {tab === "admins" && (
         <AdminsManager
           adminSlug={adminSlug}

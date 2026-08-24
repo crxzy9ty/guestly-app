@@ -22,7 +22,7 @@ export default async function AdminSettingsPage({
     redirect(`/${adminSlug}/login`);
   }
 
-  const [{ data: contentRow }, { data: demoRequests }, { data: questionSets }, { data: aspects }, { data: partners }, { data: admins }] =
+  const [{ data: contentRow }, { data: demoRequests }, { data: questionSets }, { data: aspects }, { data: partners }, { data: admins }, { data: partnerMessages }] =
     await Promise.all([
       supabase.from("content_settings").select("content").eq("id", 1).maybeSingle(),
       supabase
@@ -35,9 +35,20 @@ export default async function AdminSettingsPage({
       // profiles_select_self_or_admin already lets an admin see every row, so
       // this is a plain filtered select — no new RLS or view needed.
       supabase.from("profiles").select("id, email, last_seen_at").eq("role", "admin").order("email"),
+      supabase
+        .from("partner_messages")
+        .select("id, message, is_read, created_at, partners(name)")
+        .order("created_at", { ascending: false }),
     ]);
 
   const content = resolveContent(contentRow?.content);
+  const messages = (partnerMessages ?? []).map((m) => ({
+    id: m.id,
+    message: m.message,
+    is_read: m.is_read,
+    created_at: m.created_at,
+    partnerName: (m.partners as unknown as { name: string } | null)?.name ?? "Ismeretlen egység",
+  }));
 
   return (
     <div>
@@ -50,6 +61,7 @@ export default async function AdminSettingsPage({
         aspects={aspects ?? []}
         partners={partners ?? []}
         admins={admins ?? []}
+        partnerMessages={messages}
         currentUserId={user.id}
         // Only the boolean crosses the server/client boundary, never the
         // configured address itself — the client bundle has no way to learn

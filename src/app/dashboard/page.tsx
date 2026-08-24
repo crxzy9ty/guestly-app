@@ -84,7 +84,7 @@ export default async function DashboardPage({
   // supabase/migrations/..._aggregate_stats_views.sql) and the log is capped, so
   // none of this scales with the number of reviews the way the previous
   // fetch-everything-and-average-in-JS version did.
-  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: trendRows }, { data: logs }, { data: wowRows }] =
+  const [{ data: aspects }, { data: summary }, { data: aspectStats }, { data: heatmapRows }, { data: trendRows }, { data: logs }, { data: wowRows }, { data: partnerMessages }] =
     await Promise.all([
       supabase
         .from("question_aspects")
@@ -118,6 +118,11 @@ export default async function DashboardPage({
       // Fixed 7-vs-7-days-before comparison, independent of the period
       // picker above — see supabase/migrations/20260819150000_partner_aspect_wow.sql.
       supabase.rpc("partner_aspect_stats_wow", { target_partner_id: selected.id }),
+      supabase
+        .from("partner_messages")
+        .select("id, message, is_read, created_at")
+        .eq("partner_id", selected.id)
+        .order("created_at", { ascending: false }),
     ]);
 
   const safeAspects = aspects ?? [];
@@ -176,6 +181,7 @@ export default async function DashboardPage({
       </div>
 
       <OwnerDashboardClient
+        partnerId={selected.id}
         period={period}
         aspectAverages={aspectAverages}
         grids={grids}
@@ -187,6 +193,7 @@ export default async function DashboardPage({
         totalSubmissions={totalSubmissions}
         logRows={logRows}
         aspects={safeAspects}
+        messages={partnerMessages ?? []}
       />
     </div>
   );
