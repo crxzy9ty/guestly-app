@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { updatePassword, type AuthActionState } from "@/app/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/app/Logo";
 
 const initialState: AuthActionState = { error: null };
@@ -20,11 +21,65 @@ function SubmitButton() {
   );
 }
 
-// Reached only via the /auth/callback code-exchange redirect after clicking
-// an invite or password-reset link — the user already has a valid session
-// at this point, just no password of their choosing yet.
+// Reached two different ways, which need two different fixes here:
+//   1. Password reset ("Elfelejtett jelszó") goes through /auth/callback,
+//      a server route that exchanges a `?code=` for a session and sets the
+//      cookie itself — this page just renders the form, session already set.
+//   2. An admin/owner invite email is always an IMPLICIT-flow link: Supabase
+//      generates it via the admin API on OUR server, so there is no browser
+//      anywhere holding the PKCE code_verifier a `?code=` exchange would
+//      need. Supabase's only option is to hand back the session as a
+//      `#access_token=…` URL FRAGMENT — which a server route can never see
+//      (fragments never leave the browser). Without the effect below, that
+//      left invited users on a page with no session, `updatePassword` failing
+//      silently, and no working way forward except "Elfelejtett jelszó".
+// The Supabase browser client auto-detects a `#access_token` fragment on
+// creation and turns it into the same session cookie case 1 already has —
+// so creating it here, once, covers case 2 without touching case 1 at all.
 export default function SetPasswordPage() {
   const [state, formAction] = useActionState(updatePassword, initialState);
+  const [ready, setReady] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes("error=")) {
+      const params = new URLSearchParams(hash.slice(1));
+      setLinkError(
+        params.get("error_code") === "otp_expired"
+          ? "Ez a link már lejárt — kérj egy újat."
+          : "Ez a link már nem érvényes — kérj egy újat.",
+      );
+      setReady(true);
+      return;
+    }
+    const supabase = createClient();
+    supabase.auth.getSession().then(() => {
+      // Drops the spent #access_token=… from the address bar so a refresh
+      // or an accidentally-reshared URL can't resubmit it.
+      if (window.location.hash) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+      setReady(true);
+    });
+  }, []);
+
+  if (!ready) {
+    return <div className="min-h-full bg-mist" />;
+  }
+
+  if (linkError) {
+    return (
+      <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-mist px-6 py-16 text-center">
+        <div className="mb-7 flex items-center gap-2">
+          <Logo size={18} />
+        </div>
+        <div className="w-full max-w-sm rounded-2xl border border-line bg-paper p-8 shadow-[0_20px_50px_rgba(21,19,28,0.08)]">
+          <p className="text-sm text-slate">{linkError}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-mist px-6 py-16">
