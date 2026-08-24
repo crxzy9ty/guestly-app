@@ -153,6 +153,14 @@ export async function updatePassword(
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
+    // Was previously swallowed entirely — every failure reported the same
+    // generic "request a new link" regardless of cause, indistinguishable
+    // from the log's point of view whether the session never existed, had
+    // expired, or Supabase's own password policy rejected the value.
+    console.error(`[updatePassword] failed (code=${error.code ?? "?"}):`, error.message);
+    if (error.code === "weak_password") {
+      return { error: "Ez a jelszó nem elég erős. Próbálj egy hosszabbat, számmal és nagybetűvel." };
+    }
     return { error: "Nem sikerült frissíteni a jelszót. Kérj egy új linket." };
   }
 
