@@ -24,6 +24,7 @@ export type Partner = {
   close_hour: number | null;
   prize_frequency: "weekly" | "monthly";
   prize_description: string | null;
+  bank_account_number: string | null;
   // Engagement, from public.partner_activity. Read-only here.
   lastOwnerSeenAt: string | null;
   lastReviewAt: string | null;
@@ -80,6 +81,16 @@ function PartnerFields({ defaults }: { defaults?: Partial<Partner> }) {
           <label className={labelClass}>Kapcsolattartó telefonszáma</label>
           <input name="contact_phone" defaultValue={defaults?.contact_phone ?? ""} className={inputClass} />
         </div>
+      </div>
+      <div>
+        <label className={labelClass}>Bankszámlaszám</label>
+        <input
+          name="bank_account_number"
+          defaultValue={defaults?.bank_account_number ?? ""}
+          placeholder="12345678-12345678-12345678"
+          className={inputClass}
+        />
+        <p className="mt-1 text-[11px] text-slate">Ide küldjük a havidíj Qvik fizetési kérelmét.</p>
       </div>
       <div className="grid grid-cols-2 gap-2.5">
         <div>
@@ -252,6 +263,7 @@ export function PartnerManager({
         "email",
         "kapcsolattarto",
         "kapcsolattarto_telefon",
+        "bankszamlaszam",
         "riasztasi_kuszob",
         "elofizetes_kezdete",
         "elofizetes_vege",
@@ -267,6 +279,7 @@ export function PartnerManager({
         p.email,
         p.contact_name,
         p.contact_phone,
+        p.bank_account_number,
         p.alert_threshold,
         p.subscription_start,
         p.subscription_end,

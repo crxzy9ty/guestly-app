@@ -47,6 +47,7 @@ function fields(formData: FormData) {
     close_hour: closeHour,
     prize_frequency: prizeFrequency,
     prize_description: str("prize_description"),
+    bank_account_number: str("bank_account_number"),
   };
 }
 

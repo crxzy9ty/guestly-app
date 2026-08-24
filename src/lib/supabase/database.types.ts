@@ -55,6 +55,9 @@ export interface Database {
           // defaultPrizeDescription (src/lib/prize-copy.ts resolves this).
           prize_frequency: "weekly" | "monthly";
           prize_description: string | null;
+          // Where the monthly Qvik payment request for this partner's own
+          // subscription fee gets sent — not guest- or partner-facing.
+          bank_account_number: string | null;
           created_at: string;
           updated_at: string;
         };
