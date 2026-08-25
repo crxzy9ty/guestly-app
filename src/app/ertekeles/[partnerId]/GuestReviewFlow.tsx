@@ -9,6 +9,30 @@ type Aspect = { key: string; label: string; icon: string | null };
 
 const GRAD = "linear-gradient(135deg, #22E5EA 0%, #5B21B6 55%, #E619C8 100%)";
 
+const MAX_REASON_LENGTH = 500;
+
+// Same optional textarea at every score, but asking "what went wrong?" after
+// a 9/10 reads as broken, not just tone-deaf — three tiers of copy instead
+// of one, keyed off the score that was just picked.
+function reasonCopyFor(score: number) {
+  if (score <= 3) {
+    return {
+      title: "Mi ment rosszul?",
+      placeholder: "Pl. sokáig kellett várni, hideg volt az étel…",
+    };
+  }
+  if (score >= 8) {
+    return {
+      title: "Mit szerettél a legjobban?",
+      placeholder: "Pl. nagyon barátságos volt a személyzet…",
+    };
+  }
+  return {
+    title: "Van bármi, amit megosztanál?",
+    placeholder: "Írd meg, ha van bármi hozzáfűznivalód…",
+  };
+}
+
 // All rating state lives here, client-side, across the whole flow. The
 // actual DB write (submitReview) only fires once, at the very end — see the
 // comment in src/app/actions/reviews.ts for why.
@@ -59,12 +83,8 @@ export function GuestReviewFlow({
   const pick = (val: number) => {
     const next = { ...ratings, [aspect.key]: val };
     setRatings(next);
-    if (val <= 3) {
-      setReasonDraft("");
-      setScreen("askReason");
-    } else {
-      advance();
-    }
+    setReasonDraft("");
+    setScreen("askReason");
   };
 
   const advance = () => {
@@ -135,16 +155,17 @@ export function GuestReviewFlow({
   }
 
   if (screen === "askReason") {
+    const reasonCopy = reasonCopyFor(ratings[aspect.key]);
     return (
       <FormShell partnerName={partnerName} step={step} total={aspects.length}>
         <div className="mb-2 text-center text-3xl">💬</div>
-        <h1 className="mb-2 text-center text-xl font-bold text-ink">Mi ment rosszul?</h1>
+        <h1 className="mb-2 text-center text-xl font-bold text-ink">{reasonCopy.title}</h1>
         <p className="mb-5 text-center text-sm text-slate">Pár szó sokat segít — teljesen opcionális.</p>
         <textarea
           value={reasonDraft}
           onChange={(e) => setReasonDraft(e.target.value)}
-          maxLength={200}
-          placeholder="Pl. sokáig kellett várni, hideg volt az étel…"
+          maxLength={MAX_REASON_LENGTH}
+          placeholder={reasonCopy.placeholder}
           className="h-24 w-full resize-none rounded-lg border border-line px-3 py-2.5 text-sm text-ink outline-none"
         />
         <button

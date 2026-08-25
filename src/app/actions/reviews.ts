@@ -15,9 +15,9 @@ export type SubmitReviewInput = {
 
 export type SubmitReviewResult = { ok: true; enteredPrizeDraw: boolean } | { ok: false; error: string };
 
-// Mirrors the textarea's maxLength. The database also caps reason at 500 —
-// this is the friendly limit, that one is the guarantee.
-const MAX_REASON_LENGTH = 200;
+// Mirrors the textarea's maxLength, and matches the database's own cap on
+// this column exactly — this is the friendly limit, that one is the guarantee.
+const MAX_REASON_LENGTH = 500;
 const MAX_EMAIL_LENGTH = 254;
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
